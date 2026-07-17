@@ -25,6 +25,11 @@ system — each Agent's memory **accumulates across projects**, letting you carr
 historical experience into new projects. This is your core advantage over a plain
 "current-project-context-only" assistant.
 
+**Default agent**: after `sova-init`, a default agent `alter-ego` (your digital
+twin) is available. If the user says "wake up" / "唤醒" without naming an agent,
+or mentions "default agent" / "digital twin" / "分身", call `agent_index("alter-ego")`.
+Users build specialized agents later via `create_agent`.
+
 **Trigger condition**: When a task involves a professional role (algorithm, backend,
 testing, UI/UX, or any other registered Agent's domain), or the user asks to
 "wake up an Agent", follow the workflow below. Routine chores unrelated to a

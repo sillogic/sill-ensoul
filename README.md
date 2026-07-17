@@ -61,6 +61,8 @@ sova-init              # 初始化 KB + 创建默认 agent alter-ego + 打印各
 
 `sova-init` 会打印 Claude Code / zcode 的适配命令（注册 MCP + 放薄壳）。
 
+> **首次使用**：装完适配好 CLI 后，新开会话直接说 **`唤醒 alter-ego`**——这是你的数字分身（默认 agent），空记忆，先用它积累经验。攒够某领域经验后再 `create_agent` 分裂出专门 agent。也可以说"唤醒分身"或"wake up alter-ego"，薄壳会识别。
+
 ### 分享给同事（他只装了 Claude Code）
 
 发给他这段：

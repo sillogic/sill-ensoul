@@ -21,6 +21,8 @@ sova-init              # Initialize KB + create default agent `alter-ego` + prin
 
 `sova-init` prints the setup commands for Claude Code / zcode (register MCP + install shell).
 
+> **First use**: after wiring up your CLI, open a new session and say **`wake up alter-ego`** — this is your digital twin (the default agent), with empty memory. Accumulate experience with it first; split off a specialized agent via `create_agent` when a domain has enough. Saying "wake up" / "digital twin" / "唤醒分身" also works — the shell recognizes them.
+
 ### Share with a teammate (Claude Code)
 
 ```bash
