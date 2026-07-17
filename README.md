@@ -63,6 +63,8 @@ sova-init              # 初始化 KB + 创建默认 agent alter-ego + 打印各
 
 > **首次使用**：装完适配好 CLI 后，新开会话直接说 **`唤醒 alter-ego`**——这是你的数字分身（默认 agent），空记忆，先用它积累经验。攒够某领域经验后再 `create_agent` 分裂出专门 agent。也可以说"唤醒分身"或"wake up alter-ego"，薄壳会识别。
 
+> **想要自己的 agent 名字？** 直接对 CLI 说"帮我建一个叫小索的 agent"，它会调 `create_agent(agent_id="小索", ...)`。之后说 **`唤醒 小索`** 即可——agent_id 就是你起的名字，无需改薄壳、无需重启 CLI。alter-ego 只是开箱即用的默认起点，不是唯一选择。
+
 ### 分享给同事（他只装了 Claude Code）
 
 发给他这段：

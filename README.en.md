@@ -23,6 +23,8 @@ sova-init              # Initialize KB + create default agent `alter-ego` + prin
 
 > **First use**: after wiring up your CLI, open a new session and say **`wake up alter-ego`** — this is your digital twin (the default agent), with empty memory. Accumulate experience with it first; split off a specialized agent via `create_agent` when a domain has enough. Saying "wake up" / "digital twin" / "唤醒分身" also works — the shell recognizes them.
 
+> **Want your own agent name?** Just tell the CLI "create an agent called nova" — it calls `create_agent(agent_id="nova", ...)`. Then say **`wake up nova`** to use it. The agent_id is the name you choose; no shell edit, no CLI restart needed. alter-ego is just the out-of-the-box default, not the only option.
+
 ### Share with a teammate (Claude Code)
 
 ```bash
