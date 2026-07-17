@@ -31,16 +31,24 @@ _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", re.DOTALL)
 def _default_kb_root() -> Path:
     """Platform-appropriate default for the knowledge base, so the server is not
     bound to the repo dir (H4/H9). Precedence:
-      SOVA_KB  ->  XDG_DATA_HOME/sova  ->  %LOCALAPPDATA%/sova
-      ->  ~/.sova   (last-resort, works everywhere)."""
+      SOVA_KB  ->  platform default:
+        win32   ->  %LOCALAPPDATA%/sova/knowledge
+        darwin  ->  ~/Library/Application Support/sova/knowledge
+        else    ->  XDG_DATA_HOME/sova/knowledge  (default ~/.local/share/sova/knowledge)
+      ->  ~/.sova/knowledge   (last-resort, works everywhere)."""
     if sys.platform == "win32":
         local = os.environ.get("LOCALAPPDATA")
         if local:
             return Path(local) / "sova" / "knowledge"
+    elif sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "sova" / "knowledge"
     else:
         xdg = os.environ.get("XDG_DATA_HOME")
         if xdg:
             return Path(xdg) / "sova" / "knowledge"
+        xdg_default = Path.home() / ".local" / "share"
+        if xdg_default.exists() or True:  # XDG spec default
+            return xdg_default / "sova" / "knowledge"
     return Path.home() / ".sova" / "knowledge"
 
 

@@ -37,8 +37,9 @@
 | 平台 | 路径 |
 |---|---|
 | Windows | `%LOCALAPPDATA%\sova\knowledge`（即 `C:\Users\<你>\AppData\Local\sova\knowledge`） |
+| macOS | `~/Library/Application Support/sova/knowledge` |
 | Linux | `$XDG_DATA_HOME/sova/knowledge`（默认 `~/.local/share/sova/knowledge`） |
-| macOS / 兜底 | `~/.sova/knowledge` |
+| 兜底 | `~/.sova/knowledge` |
 
 可用环境变量 `SOVA_KB` 覆盖到任意位置（比如想放在 Dropbox / iCloud 同步）。
 

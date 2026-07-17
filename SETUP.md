@@ -39,8 +39,10 @@ without the package.
 ### 2. Knowledge base initialized
 
 Run `sova-init` yourself (it's now on PATH). This creates the global KB
-(`%LOCALAPPDATA%/sova/knowledge` on Windows, `XDG_DATA_HOME/sova/knowledge` on
-Linux, `~/.sova/knowledge` fallback) and the default agent `alter-ego` (digital
+(`%LOCALAPPDATA%/sova/knowledge` on Windows,
+`~/Library/Application Support/sova/knowledge` on macOS,
+`XDG_DATA_HOME/sova/knowledge` on Linux, `~/.sova/knowledge` fallback) and the
+default agent `alter-ego` (digital
 twin, empty memory). It's idempotent — safe to run if already initialized (it'll
 skip). No user input needed.
 
