@@ -12,15 +12,48 @@
 > how your own CLI registers MCP servers and where its instruction file lives —
 > use the current mechanism. sova stays CLI-agnostic.
 
-## Prerequisites (already done if the user ran `sova-init`)
+## Prerequisites — you (the CLI AI) handle these, don't offload to the user
 
-- sova package installed: `sova-mcp` and `sova-init` console commands on PATH.
-- Knowledge base initialized at the global default (`%LOCALAPPDATA%/sova/knowledge`
-  on Windows, `XDG_DATA_HOME/sova/knowledge` on Linux, `~/.sova/knowledge` fallback).
-  Override with `SOVA_KB` env var if the user wants it elsewhere.
-- Default agent `alter-ego` (digital twin) created with empty memory.
+The user's goal is to say ONE sentence ("set up sova from `<repo>`/SETUP.md") and
+have everything work. So before adapting the CLI, ensure these are true — do them
+yourself if not:
 
-If `sova-init` hasn't been run, tell the user to run it first, then continue.
+### 1. sova package installed
+
+Check if `sova-mcp` is on PATH (e.g. `sova-mcp --help` or `which sova-mcp`). If
+not, install it. The user cloned the repo, so:
+
+```bash
+pip install -e <repo>
+```
+
+(or `pip install git+https://github.com/<user>/sova.git` if installing from GitHub
+without a local clone). After install, `sova-mcp` and `sova-init` commands are on
+PATH.
+
+**Safety boundary**: before running pip install, TELL the user you're about to
+install the sova package (from `<repo>` / GitHub) and get their OK. Don't install
+silently. Show them the command. If they decline, stop and explain sova can't run
+without the package.
+
+### 2. Knowledge base initialized
+
+Run `sova-init` yourself (it's now on PATH). This creates the global KB
+(`%LOCALAPPDATA%/sova/knowledge` on Windows, `XDG_DATA_HOME/sova/knowledge` on
+Linux, `~/.sova/knowledge` fallback) and the default agent `alter-ego` (digital
+twin, empty memory). It's idempotent — safe to run if already initialized (it'll
+skip). No user input needed.
+
+If the user wants the KB somewhere specific, set `SOVA_KB=<path>` before running
+`sova-init` — but only if they asked; the default global location is fine
+otherwise.
+
+### 3. Default agent `alter-ego` exists
+
+`sova-init` creates it. Verify with `sova-init` output (it says "Created default
+agent 'alter-ego'") or by checking the KB dir has `agents/alter-ego/`.
+
+Only after all three are true, proceed to CLI adaptation below.
 
 ## Goal: three things must be true when you're done
 

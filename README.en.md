@@ -14,12 +14,15 @@ A multi-agent system with long-term memory (OKF Wiki), decoupled from CLI and mo
 
 ## Quick Start
 
-```bash
-pip install git+https://github.com/<your-username>/sova.git
-sova-init              # Initialize KB + create default agent `alter-ego`
+After cloning the repo, say ONE sentence in your CLI (Claude Code / Codex / zcode, etc.):
+
+```
+set up sova from <repo>/SETUP.md
 ```
 
-`sova-init` only does CLI-agnostic init (build KB + alter-ego). **CLI adaptation** is done by your CLI's own AI — in the CLI, say `set up sova from <repo>/SETUP.md`, and the CLI reads `SETUP.md` and registers the MCP server + installs the shell itself. See [SETUP.md](SETUP.md).
+Your CLI's AI reads [SETUP.md](SETUP.md): it `pip install`s the sova package (will ask your OK first), runs `sova-init` to build the KB and default agent `alter-ego`, then registers the MCP server + installs the shell itself. You only say that one sentence; after it's done, restart the CLI and say "wake up alter-ego".
+
+> Prefer to install the package yourself? Run `pip install -e <repo>` + `sova-init`, then let the AI do only the adaptation.
 
 > **First use**: after wiring up your CLI, open a new session and say **`wake up alter-ego`** — this is your digital twin (the default agent), with empty memory. Accumulate experience with it first; split off a specialized agent via `create_agent` when a domain has enough. Saying "wake up" / "digital twin" / "唤醒分身" also works — the shell recognizes them.
 
@@ -27,18 +30,13 @@ sova-init              # Initialize KB + create default agent `alter-ego`
 
 ### Share with a teammate (any MCP-capable CLI)
 
-```bash
-pip install git+https://github.com/<you>/sova.git
-sova-init                          # Initialize KB + create alter-ego
-```
-
-Then let their CLI adapt itself — in the CLI, say:
+Send them the repo URL and have them say in their CLI:
 
 ```
 set up sova from <repo>/SETUP.md
 ```
 
-The CLI's AI reads `SETUP.md` (the adaptation intent) and registers the MCP server + installs the shell itself. sova never hardcodes any CLI's config format — when CLIs change, the AI adapts, sova doesn't. After setup, restart the CLI and say "wake up alter-ego" to start.
+They run nothing themselves — their CLI's AI reads [SETUP.md](SETUP.md) and runs the whole flow (install package + init KB + adapt the CLI). sova never hardcodes any CLI's config format; when CLIs change, the AI adapts, sova doesn't. After setup, restart the CLI and say "wake up alter-ego" to start.
 
 After installing, open a new Claude Code session — a default agent `alter-ego` (your digital twin) is ready. Say "wake up alter-ego" to start accumulating experience.
 

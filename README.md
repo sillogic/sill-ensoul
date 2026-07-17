@@ -54,12 +54,15 @@
 
 ### 自己装（从 GitHub）
 
-```bash
-pip install git+https://github.com/<你的用户名>/sova.git
-sova-init              # 初始化 KB + 创建默认 agent alter-ego
+clone 仓库后，在你的 CLI（Claude Code / Codex / zcode 等）里说一句：
+
+```
+帮我配置 sova，按 <repo>/SETUP.md 来
 ```
 
-`sova-init` 只做 CLI 无关的初始化（建 KB + alter-ego）。**CLI 适配**让 CLI 的 AI 自己做——在 CLI 里说 `帮我配置 sova，按 <repo>/SETUP.md 来`，CLI 读 `SETUP.md` 自己注册 MCP + 装薄壳。详见 [SETUP.md](SETUP.md)。
+CLI 的 AI 会读 [SETUP.md](SETUP.md)：先 `pip install` 装 sova 包（会征求你同意）、跑 `sova-init` 建知识库和默认 agent `alter-ego`、然后自己注册 MCP server + 装薄壳。全程你只说这一句话，装完重启 CLI 说"唤醒 alter-ego"即可。
+
+> 不想让 AI 装包？自己敲 `pip install -e <repo>` + `sova-init`，再让 AI 适配也行。
 
 > **首次使用**：装完适配好 CLI 后，新开会话直接说 **`唤醒 alter-ego`**——这是你的数字分身（默认 agent），空记忆，先用它积累经验。攒够某领域经验后再 `create_agent` 分裂出专门 agent。也可以说"唤醒分身"或"wake up alter-ego"，薄壳会识别。
 
@@ -67,20 +70,13 @@ sova-init              # 初始化 KB + 创建默认 agent alter-ego
 
 ### 分享给同事（他装了任意 MCP-capable CLI）
 
-发给他这段：
-
-```bash
-pip install git+https://github.com/<你>/sova.git
-sova-init                          # 初始化 KB + 创建 alter-ego
-```
-
-然后让他的 CLI 自己完成适配——在 CLI 里说一句：
+发给他仓库地址，让他在 CLI 里说一句：
 
 ```
 帮我配置 sova，按 <repo>/SETUP.md 来
 ```
 
-CLI 的 AI 会读 `SETUP.md`（适配意图），自己注册 MCP server + 装薄壳。sova 不绑死任何 CLI 的配置方式，CLI 更新了也不用改 sova。适配完重启 CLI，说"唤醒 alter-ego"开始。
+他什么都不用敲——CLI 的 AI 读 [SETUP.md](SETUP.md) 跑完全程（装包 + 建库 + 适配）。sova 不绑死任何 CLI 的配置方式，CLI 更新了也不用改 sova。适配完重启 CLI，说"唤醒 alter-ego"开始。
 
 ### 从 PyPI 装（发布后）
 
