@@ -1,6 +1,6 @@
 # Sill-Ensoul CLI Setup (machine-readable adaptation intent)
 
-> **Who reads this**: the AI inside the user's CLI (Claude Code / Codex / zcode /
+> **Who reads this**: the AI inside the user's CLI (Claude Code / Codex / zcode / OpenCode /
 > any MCP-capable CLI). The user got this content to you in one of two ways:
 > - they said *"set up sill-ensoul from `<repo>`/SETUP.md"* and you read the file, or
 > - they pasted this document's content directly into the chat.

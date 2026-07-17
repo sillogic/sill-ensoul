@@ -12,7 +12,7 @@ Give your CLI agents experience that doesn't vanish when you switch projects, sw
 
 ## What it does
 
-- **Cross-CLI**: one memory, shared across Claude Code / Codex / zcode / Cursor. Use Claude today, switch to Codex tomorrow — your agents' memory follows.
+- **Cross-CLI**: one memory, shared across Claude Code / Codex / zcode / Cursor / OpenCode. Use Claude today, switch to Codex tomorrow — your agents' memory follows.
 - **Cross-project**: memory lives in a global KB, not bound to any project repo. The bug your algo agent hit in project A is recalled in project B.
 - **Cross-session**: every new conversation, the agent `wiki_search`es its own past experience first and starts with memory, not from scratch.
 - **Agent isolation**: spin up multiple ensoulers (algorithm engineer, backend, testing, UI...) — each has its own memory bundle, no cross-contamination. Wake one, work with its experience.
@@ -24,7 +24,7 @@ Give your CLI agents experience that doesn't vanish when you switch projects, sw
 
 ## Quick Start
 
-After cloning, do **one** of these in your CLI (Claude Code / Codex / zcode, etc.):
+After cloning, do **one** of these in your CLI (Claude Code / Codex / zcode / OpenCode, etc.):
 
 ```text
 # Option A: let the CLI's AI set it up (recommended — you send one message)
@@ -140,4 +140,4 @@ Three release tests, all green = core loop works (each builds its own temp KB, r
 
 ## License
 
-[MIT](LICENSE) © sillogic
+Released under the [MIT License](LICENSE) © 2026 sillogic.

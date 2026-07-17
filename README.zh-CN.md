@@ -12,7 +12,7 @@
 
 ## 它能做什么
 
-- **跨工具**：一份记忆，在 Claude Code / Codex / zcode / Cursor 之间通用。今天用 Claude，明天切 Codex，你的 agent 记忆不丢。
+- **跨工具**：一份记忆，在 Claude Code / Codex / zcode / Cursor / OpenCode 之间通用。今天用 Claude，明天切 Codex，你的 agent 记忆不丢。
 - **跨项目**：记忆存在全局 KB，不绑定任何项目仓库。algo-engineer 在项目 A 踩的坑，项目 B 直接召回。
 - **跨会话**：每次新对话，agent 先 `wiki_search` 自己的历史经验，带着记忆开工，而不是从零。
 - **agent 记忆隔离**：建多个 ensouler（算法工程师、后端、测试、UI……），各自独立记忆 bundle，互不污染。唤醒谁，就用谁的经验。
@@ -24,7 +24,7 @@
 
 ## Quick Start
 
-clone 仓库后，在你的 CLI（Claude Code / Codex / zcode 等）里**二选一**：
+clone 仓库后，在你的 CLI（Claude Code / Codex / zcode / OpenCode 等）里**任选以下一种方式**：
 
 ```text
 # 方式 A：让 CLI 的 AI 自己装（推荐，全程你只发一句）
@@ -140,4 +140,4 @@ python -m tests.run_tests
 
 ## License
 
-[MIT](LICENSE) © sillogic
+基于 [MIT 协议](LICENSE) 发布 © 2026 sillogic。
