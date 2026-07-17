@@ -1,0 +1,33 @@
+# === 私人记忆 + 协作数据：绝不上传 ===
+# knowledge/ 是开发期的记忆副本（全局 KB 在 %LOCALAPPDATA%/sova）。
+# 每个用户的记忆是私有的，不该进仓库。
+knowledge/
+# shared/ 是 Phase 2 的 agent 协作数据（registry/mailbox/contracts），
+# 含个人的 agent 所有权声明和协商记录，私有。
+shared/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# === FTS5 索引（每个环境本地生成）===
+**/.fts/
+
+# === Obsidian 本地配置（个人编辑器设置，非项目内容）===
+.obsidian/
+knowledge/.obsidian/
+
+# === CLI 本地配置（各 CLI 可能创建 .agents/ 等，非项目内容）===
+.agents/
+
+# === 临时/未命名文件 ===
+*.tmp
+未命名.base
+
+# === 测试临时产物 ===
+tests/_proj_*/
