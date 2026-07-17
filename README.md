@@ -1,5 +1,7 @@
 # Sova
 
+[English](README.en.md) | 简体中文
+
 带长期记忆（OKF Wiki）的多智能体系统，与 CLI / 模型供应商解耦。每个 sova（Agent）拥有一个 OKF 知识 bundle；一个轻量 MCP server 把这些 bundle 暴露成工具，让你在 zcode / Claude Code / Codex 等 CLI 里直接读写 sova 的记忆。
 
 > **Sova** — 给 CLI agent 的跨项目长期记忆。每个被唤醒的 agent 也是一个 **sova**（复数 sovas）。
