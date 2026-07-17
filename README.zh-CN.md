@@ -126,7 +126,7 @@ python -m tests.run_tests
 - ✅ 核心闭环跑通：唤醒 → 召回 → 引用 → 沉淀 → 跨项目留存
 - ✅ 可安装：`pip install` + `sill-ensoul-init` 自举适配各 CLI
 - ✅ 跨 CLI 验证：zcode + Claude Code 均适配成功
-- 🟡 未做：sleeptime 全自动蒸馏（目前是提醒式半自动）
+- ✅ 设计定案：提醒式半自动蒸馏是**终态设计**（不是全自动的过渡态）；多 agent 协作走编排者模式（D6）
 - 详见 [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---

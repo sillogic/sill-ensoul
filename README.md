@@ -126,7 +126,7 @@ Three release tests, all green = core loop works (each builds its own temp KB, r
 - ✅ Core loop works: wake → recall → cite → distill → cross-project retention
 - ✅ Installable: `pip install` + `sill-ensoul-init` self-boots CLI setup
 - ✅ Cross-CLI verified: zcode + Claude Code both adapted
-- 🟡 Not done: sleeptime fully-auto distillation (currently reminder-style semi-auto)
+- ✅ Design final: reminder-style semi-auto distillation is the intended design (not a placeholder for full-auto). Multi-agent collaboration via orchestrator model (D6).
 - See [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---
