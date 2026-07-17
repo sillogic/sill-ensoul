@@ -115,12 +115,34 @@ wasn't run or KB location differs — check `SOVA_KB` / run `sova-init`.
 - Don't modify sova's repo files — setup is about wiring sova INTO the CLI,
   not changing sova.
 
-## After setup
+## After setup — you MUST report this to the user (they didn't read the README)
 
-Tell the user: setup is done, say "wake up alter-ego" (or "唤醒 alter-ego") to
-start. The default agent has empty memory — accumulate experience with it first;
-split off a specialized agent via `create_agent` when a domain has enough.
+Once adaptation is done and verified, **do not just say "done"**. Output a short
+report so the user knows exactly what to do next. Use this structure (adapt the
+wording naturally, but cover all three points):
 
-For full workflow rules, the shell references `WORKFLOW.md` in the sova repo
-(absolute path embedded in the shell content). For design background, see
-`docs/DESIGN.md`; for progress/decisions, `docs/ROADMAP.md`.
+---
+
+**✅ sova is set up.** Restart this CLI now (config/instruction files load at
+startup, not hot-reloaded), then in a new session:
+
+**👉 Say `唤醒 alter-ego`** (or `wake up alter-ego` / `唤醒分身`) to start.
+`alter-ego` is your digital twin — empty memory, accumulate experience with it
+first.
+
+**Going further** (no need to read docs):
+- Want your own agent name? Tell me "create an agent called <name>", then say
+  `唤醒 <name>`.
+- After a while I'll proactively remind you when something is worth saving to
+  memory — you confirm, I write it.
+- To read/edit your memory directly, open the KB in Obsidian:
+  - Windows: `%LOCALAPPDATA%\sova\knowledge`
+  - macOS: `~/Library/Application Support/sova/knowledge`
+  - Linux: `~/.local/share/sova/knowledge`
+
+---
+
+That report is the user's whole onboarding — they pasted SETUP.md, you ran it,
+you told them the wake word and the basics. They never need to open the README
+for the common path. (README still exists for design background, full tool
+reference, and troubleshooting — point them there only if they ask for depth.)
