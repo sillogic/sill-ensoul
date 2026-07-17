@@ -17,7 +17,7 @@
 ```
   zcode / Claude Code / Codex   （推理发生在各 CLI 的模型供应商，不锁死）
            |  加载 persona + wiki 切片（薄壳指令：AGENTS.md / CLAUDE.md）
-        MCP server（ensoul/，记忆引擎，14 个工具）
+        MCP server（ensoul/，记忆引擎，8 个工具）
            |  读写
   knowledge/agents/<id>/  ← 每个 Agent 一个 OKF bundle（md 文件，全局 KB）
 ```
@@ -94,7 +94,7 @@ ensoul/                         # 仓库根
     fts.py                    # SQLite FTS5 全文索引（CJK 按字分词 + BM25）
     server.py                 # FastMCP，把 okf 包成 8 个工具（薄壳，只透传）
     init_cmd.py               # sill-ensoul-init 命令（初始化 KB + 默认 agent + 适配步骤）
-  tests/                      # 4 个测试，python -m tests.run_tests 一键跑（自建临时 KB，不依赖 repo）
+  tests/                      # 3 个发布测试，python -m tests.run_tests 一键跑（自建临时 KB，不依赖 repo）
   WORKFLOW.md                 # CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
   SHELL.md                    # CLI 无关薄壳（权威源，随包发布）
   SETUP.md                    # CLI 适配意图（给 CLI 的 AI 读，让它自己注册 MCP + 装薄壳）
@@ -113,16 +113,17 @@ pip install -e .
 python -m tests.run_tests
 ```
 
-四个测试，全绿 = 核心闭环跑通：
+三个发布测试，全绿 = 核心闭环跑通：
 
 | 测试 | 验什么 |
 |---|---|
-| `test_smoke` | OKF 纯逻辑（读写检索 + log） |
 | `test_search` | FTS5 检索 + persona 排除（11 项回归） |
 | `test_mcp_live` | MCP 壳层（8 工具，走真实 stdio） |
 | `test_cross_project` | 跨项目记忆留存（端到端） |
 
-> 四个测试都自建临时 KB（不依赖 repo 预存数据），clone 后 `python -m tests.run_tests` 直接跑。
+> 三个发布测试都自建临时 KB（不依赖 repo 预存数据），clone 后 `python -m tests.run_tests` 直接跑。
+>
+> 另有 `test_smoke`（维护者本地用，依赖开发者全局 KB 里的真实 `algo-engineer`，不纳入 `run_tests.py`，新用户无需跑它）。
 
 ---
 

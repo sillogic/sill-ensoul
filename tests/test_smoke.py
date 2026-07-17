@@ -1,6 +1,14 @@
 """Smoke test for the OKF layer. No MCP client needed.
 
-Run from the repo root:
+⚠ MAINTAINER-ONLY, NOT in run_tests.py.
+This test reads/writes the REAL global KB and depends on the maintainer's
+`algo-engineer` agent (its persona, a `playbook` concept, etc.). A fresh
+clone has an empty KB, so this would fail at `assert agents`. New users
+should run `python -m tests.run_tests` instead — it runs the three
+self-contained tests (test_search/test_mcp_live/test_cross_project) that
+build their own temp KBs.
+
+Run from the repo root (maintainer only):
     python -m tests.test_smoke
 """
 from ensoul import okf

@@ -26,11 +26,12 @@ def run(name: str) -> bool:
 
 
 def main() -> None:
-    # 四个测试都自建临时 KB,可任意次数重复运行(见 playbook SOP-4)。
+    # 三个发布测试都自建临时 KB,可任意次数重复运行(见 playbook SOP-4)。
+    # test_smoke 不纳入:它依赖维护者全局 KB 里的真实 algo-engineer,
+    # 新用户 clone 后没有该 agent 会挂;它对维护者仍有价值,单独跑即可。
     tests = [
-        "tests.test_smoke",        # OKF 纯逻辑
-        "tests.test_search",       # H1/H7 检索回归(FTS5 + persona 排除)
-        "tests.test_mcp_live",     # MCP 壳层(8 工具)
+        "tests.test_search",         # H1/H7 检索回归(FTS5 + persona 排除)
+        "tests.test_mcp_live",       # MCP 壳层(8 工具)
         "tests.test_cross_project",  # 跨项目记忆端到端
     ]
     ok = True

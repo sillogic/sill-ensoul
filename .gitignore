@@ -3,11 +3,19 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
+# 私人记忆（KB bundle + agent 间共享契约）——绝不进仓库
+# 用户的记忆是私有的，包含真实项目细节、persona、经验
+knowledge/
+shared/
+
 # FTS5 索引（每个环境本地生成）
 **/.fts/
 
 # Obsidian 本地配置
 .obsidian/
+
+# zcode CLI 本地会话产物（plans 等，含会话内容，不进仓库）
+.zcode/
 
 # 临时文件
 *.tmp

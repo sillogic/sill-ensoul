@@ -9,7 +9,7 @@ description = "OKF-backed long-term memory for agents, exposed via MCP. CLI- and
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "sill-ensoul" }]
+authors = [{ name = "sillogic" }]
 dependencies = [
     "mcp>=1.2",
     "pyyaml>=6.0",
