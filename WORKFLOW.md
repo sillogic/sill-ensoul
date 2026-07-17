@@ -151,11 +151,11 @@
 
 ## 5. 切换 Agent
 
-同一个会话里可以换角色：对 `agent_index` 换一个 `agent_id` 即加载新 persona + 知识地图。记忆彼此隔离——algo-engineer 的经验 backend-engineer 看不到（多 Agent 协作/边界见 Phase 2，当前聚焦孤立多 Agent）。
+同一个会话里可以换角色：对 `agent_index` 换一个 `agent_id` 即加载新 persona + 知识地图。记忆彼此隔离——algo-engineer 的经验 backend-engineer 看不到。但**任何 agent 都能用 `wiki_write_concept(agent_id=...)` 操作其他 agent 的记忆**（编排者模式，见 D6）。
 
 ---
 
-## 6. 工具速查（14 个，跨 CLI 名称一致）
+## 6. 工具速查（8 个，跨 CLI 名称一致）
 
 | 工具 | 何时用 |
 |---|---|
@@ -167,12 +167,8 @@
 | `wiki_read` | 读某条 concept 的细节 |
 | `wiki_write_concept` | 沉淀新经验（type 必填） |
 | `wiki_append_log` | 记一笔变更 |
-| `registry_list` / `registry_update` | 多 sova 所有权声明（Phase 2） |
-| `boundary_scan` | 检测 sova 间资源重叠（Phase 2） |
-| `comm_send` / `comm_read` | sova 间消息（Phase 2） |
-| `boundary_record` | 记录边界协议（Phase 2） |
 
-> Phase 2（registry/comm/boundary）当前 deprioritize，孤立多 Agent 场景用不到。
+> 多 agent 协作不需要专门工具：`wiki_*` 的 `agent_id` 参数可指向**任何** agent。唤醒 A 时，可直接 `wiki_write_concept(agent_id="B", ...)` 写 B 的记忆、`wiki_read(agent_id="B", ...)` 读 B——编排者直接操作，无需自治协商层（见 docs/ROADMAP.md D6）。
 
 ---
 
@@ -215,6 +211,6 @@
 
 - **不擅自 push**：commit 到本地即可，push 由用户确认（推远程是 outward-facing 操作）。
 - **不擅自改历史**：不 `rebase` / `reset --hard` / `force push` 已分享的分支，除非用户明确要求。
-- **commit 前确认会提交什么**：`git status` 看一眼，确保私人数据（`knowledge/` `shared/`）没误入。
+- **commit 前确认会提交什么**：`git status` 看一眼，确保私人数据（`knowledge/`）没误入。
 - **一个 commit 一件事**：不把无关改动塞进同一个 commit。
 - **在默认分支先开分支**：若在 `main`/`master`，先开 feature 分支再改（除非用户说直接提交）。

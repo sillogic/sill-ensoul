@@ -11,8 +11,6 @@ from datetime import date, datetime
 from mcp.server.fastmcp import FastMCP
 
 from . import okf
-from . import registry as reg
-from . import comm
 
 mcp = FastMCP("sova")
 
@@ -104,59 +102,6 @@ def wiki_write_concept(agent_id: str, concept_id: str, type: str,
 def wiki_append_log(agent_id: str, action: str, detail: str) -> str:
     """Append one update entry to the agent's log.md (today's date group)."""
     return _dump(okf.append_log(agent_id, action, detail))
-
-
-# ---- Phase 2: registry / boundary / agent-to-agent comms ----
-
-@mcp.tool()
-def registry_list() -> str:
-    """List all agents and their ownership declarations (owns / intends / depends_on).
-    This is the shared blackboard. Call it to see who owns what before assigning work."""
-    return _dump(reg.registry_list())
-
-
-@mcp.tool()
-def registry_update(agent_id: str, owns: list[str] | None = None,
-                    intends: list[str] | None = None,
-                    depends_on: list[str] | None = None,
-                    name: str = "") -> str:
-    """Create or update an agent's ownership declaration. Pass a list to change a
-    field; omit (null) to leave it. Agents declare intends when planning to touch
-    an area they don't own yet, so boundary_scan can catch overlaps early."""
-    return _dump(reg.registry_update(agent_id, owns, intends, depends_on,
-                                     name or None))
-
-
-@mcp.tool()
-def boundary_scan() -> str:
-    """Scan all ownership declarations for resource overlaps between agents.
-    Returns conflicts: ownership_conflict / boundary_dispute / intentional_overlap.
-    The orchestrator (or you) should trigger a negotiation when conflicts appear."""
-    return _dump(reg.boundary_scan())
-
-
-@mcp.tool()
-def comm_send(from_agent: str, to_agent: str, message: str,
-              subject: str = "") -> str:
-    """Send a message from one agent to another via the shared mailbox.
-    Used for boundary negotiation, questions, and task handoffs."""
-    return _dump(comm.comm_send(from_agent, to_agent, message, subject))
-
-
-@mcp.tool()
-def comm_read(agent_id: str, unread_only: bool = False) -> str:
-    """Read messages addressed to an agent. Call this when an agent needs to
-    hear what others are saying to it (e.g. a boundary negotiation message)."""
-    return _dump(comm.comm_read(agent_id, unread_only))
-
-
-@mcp.tool()
-def boundary_record(agent_a: str, agent_b: str, contract_body: str,
-                    summary: str = "") -> str:
-    """Record a resolved boundary agreement as a markdown contract file under
-    shared/contracts/. After recording, both agents should registry_update their
-    owns/intends to match the agreed boundary."""
-    return _dump(comm.boundary_record(agent_a, agent_b, contract_body, summary))
 
 
 def main() -> None:

@@ -19,12 +19,11 @@ def run(name: str) -> bool:
 
 
 def main() -> None:
-    # Phase 2 (test_phase2) is deprioritized (见 ROADMAP H5: registry 状态污染,
-    # 不可重复运行)。当前聚焦孤立多 Agent,故只跑下面四个。
+    # 四个测试都自建临时 KB,可任意次数重复运行(见 playbook SOP-4)。
     tests = [
         "tests.test_smoke",        # OKF 纯逻辑
         "tests.test_search",       # H1/H7 检索回归(FTS5 + persona 排除)
-        "tests.test_mcp_live",     # MCP 壳层(14 工具)
+        "tests.test_mcp_live",     # MCP 壳层(8 工具)
         "tests.test_cross_project",  # 跨项目记忆端到端
     ]
     ok = True

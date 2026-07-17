@@ -81,7 +81,7 @@ sova-init
 
 （发 PyPI 只需在 `pyproject.toml` 上加发版动作 + 改名，不改逻辑。）
 
-> **隐私**：`knowledge/` 和 `shared/` 在 `.gitignore` 里，你的私人记忆和协作数据不会进仓库。同事装完是空 KB，各人的 sova 记忆独立、互不串。
+> **隐私**：`knowledge/` 在 `.gitignore` 里，你的私人记忆不会进仓库。同事装完是空 KB，各人的 sova 记忆独立、互不串。
 
 ---
 
@@ -92,9 +92,7 @@ sova/                         # 仓库根
   sova/                       # 记忆引擎（纯逻辑 + MCP 壳）
     okf.py                    # OKF bundle 读写检索（纯逻辑，无 MCP 依赖）
     fts.py                    # SQLite FTS5 全文索引（CJK 按字分词 + BM25）
-    server.py                 # FastMCP，把 okf 包成 14 个工具（薄壳，只透传）
-    registry.py               # Phase 2: 所有权声明 + 边界扫描
-    comm.py                   # Phase 2: agent 间通讯 + 边界协议
+    server.py                 # FastMCP，把 okf 包成 8 个工具（薄壳，只透传）
     init_cmd.py               # sova-init 命令（初始化 KB + 默认 agent + 适配步骤）
   tests/                      # 4 个测试，python run_tests.py 一键跑（自建临时 KB，不依赖 repo）
   WORKFLOW.md                 # CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
@@ -103,7 +101,7 @@ sova/                         # 仓库根
   pyproject.toml              # 包定义（sova-mcp + sova-init 命令）
 ```
 
-> KB（`knowledge/agents/<id>/`）和 Phase 2 协作数据（`shared/`）不在仓库里——它们是私有记忆，默认在 `%LOCALAPPDATA%/sova/knowledge`（见上节）。
+> KB（`knowledge/agents/<id>/`）不在仓库里——它是私有记忆，默认在 `%LOCALAPPDATA%/sova/knowledge`（见上节）。
 
 ---
 
@@ -120,14 +118,14 @@ python run_tests.py
 |---|---|
 | `test_smoke` | OKF 纯逻辑（读写检索 + log） |
 | `test_search` | FTS5 检索 + persona 排除（11 项回归） |
-| `test_mcp_live` | MCP 壳层（14 工具，走真实 stdio） |
+| `test_mcp_live` | MCP 壳层（8 工具，走真实 stdio） |
 | `test_cross_project` | 跨项目记忆留存（端到端） |
 
 > 四个测试都自建临时 KB（不依赖 repo 预存数据），clone 后 `python run_tests.py` 直接跑。
 
 ---
 
-## 14 个工具速查
+## 8 个工具速查
 
 | 工具 | 作用 |
 |---|---|
@@ -139,12 +137,8 @@ python run_tests.py
 | `wiki_read` | 读某条 concept 的细节 |
 | `wiki_write_concept` | 沉淀新经验（type 必填） |
 | `wiki_append_log` | 记一笔变更 |
-| `registry_list` / `registry_update` | 多 sova 所有权声明（Phase 2） |
-| `boundary_scan` | 检测 sova 间资源重叠（Phase 2） |
-| `comm_send` / `comm_read` | sova 间消息（Phase 2） |
-| `boundary_record` | 记录边界协议（Phase 2） |
 
-> Phase 2（registry/comm/boundary）已实现但暂缓，当前聚焦孤立多 Agent。
+> 多 agent 协作不需要专门工具：任何 agent 都能用 `wiki_write_concept(agent_id=...)` / `wiki_read` / `wiki_search` 操作**其他** agent 的记忆——编排者直接读写，无需自治协商基础设施（见 docs/ROADMAP.md 的 D6 决策）。
 
 ---
 
@@ -164,5 +158,5 @@ python run_tests.py
 - ✅ 核心闭环跑通：唤醒 → 召回 → 引用 → 沉淀 → 跨项目留存。全特性测试 8/8 通过。
 - ✅ 可发布：`pip install` 一键装，`sova-init` 自举适配各 CLI。
 - ✅ 跨 CLI 验证：zcode + Claude Code 均适配成功。
-- 🟡 暂缓：Phase 2 多 Agent 编排、sleeptime 全自动蒸馏。
+- 🟡 未做：sleeptime 全自动蒸馏。
 - 详见 [docs/ROADMAP.md](docs/ROADMAP.md)。

@@ -17,7 +17,7 @@
 3. **记忆范围是"角色作用域",不是"项目作用域"。** 这是相对现有 CLI(均以项目为单位、无跨项目记忆)的核心差异化——也是整个项目存在的理由。
 4. **越用越强 = 规模红利。** 这条把成败压在了"记忆增长"上,因此任何**随规模退化**的东西都是直接威胁(见 H1)。
 
-> 近期聚焦:**孤立多 Agent**(一类项目一个 Agent;多类任务多个 Agent;另有跨项目 Agent 如 UI/UX、测试)。编排/通讯(Phase 2)暂缓。
+> 多 agent 协作走**编排者模式**(D6):任何 agent 都能用 `wiki_*` 工具操作其他 agent 的记忆,无需自治协商基础设施。
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### D1 — 服务形式:MCP 作主接口,核心保持 MCP 无关
 - MCP 是当前最佳的"LLM 工具调用"主接口:各目标 CLI(Claude Code / Codex / Cursor / zcode / OpenCode)通吃,一次实现多处用,结构化参数优于文本解析。
-- **但 MCP 不能是唯一通路。** 关键纪律:**逻辑只进 `okf.py` / `registry.py` / `comm.py`;`server.py` 永远只做透传,不塞逻辑。** 这样未来可加 `cli.py`(二进制,最大可移植)、`http.py`(远程 / 多 CLI 共享实例)而不碰核心。
+- **但 MCP 不能是唯一通路。** 关键纪律:**逻辑只进 `okf.py`;`server.py` 永远只做透传,不塞逻辑。** 这样未来可加 `cli.py`(二进制,最大可移植)、`http.py`(远程 / 多 CLI 共享实例)而不碰核心。
 - 现状已符合:`okf.py` 头部声明 *"pure logic and has no MCP dependency"*,`server.py` 是薄 FastMCP 适配层。**保持即可,不要破坏。**
 - 备选评估:HTTP/REST(CLI 不原生调,与 MCP 重复)、CLI 二进制(可移植但文本需解析)、纯文件(零依赖但写入易错)——均不如 MCP 适合本用途。
 
@@ -49,6 +49,17 @@
 - **为什么这样设计**:① skill 是 CLI 的,"用 skill 的经验"是 agent 的记忆,两者解耦,契合"纯文档外挂"哲学(零代码);② 去掉自动安装/探测=守住安全边界,也让规则极简。
 - **状态**:✅ 已落地。规则在 WORKFLOW.md §3 + zcode AGENTS.md 薄壳;demo 见 algo-engineer 的 `expertise/skill-pdf`(用真实 document-skills:pdf 沉淀)。
 
+
+### D6 — 多 agent 协作:编排者模式,废弃自治协商(Phase 2 已废)
+- **决策**:sova 的多 agent 协作走**编排者模式**——任何 agent 都能用现有 `wiki_*` 工具(`wiki_write_concept(agent_id=...)` / `wiki_read` / `wiki_search`)操作**其他** agent 的记忆。编排者(人或任一 agent)直接决定写谁的记忆、把结论分发给谁。
+- **废弃的 Phase 2**:原设计的 `registry`(所有权声明)+ `boundary_scan`(冲突检测)+ `comm` 协商 + `boundary_record`(契约)全部删除。它们是为"agent 自治协商边界"设计的,但 sova 是"编排者主导"模型,用不上——编排者知道在干什么,不用所有权声明防冲突。
+- **为什么废弃**(三个场景触发反思):
+  1. 场景"让 sova-dev 更新 algo-engineer 记忆" → 现有 `wiki_write_concept(agent_id=...)` 直接能做,不需任何 Phase 2 设施。
+  2. 场景"规划完分发给两个 agent" → 编排者直接 `wiki_write_concept` 到各方记忆即可,不需 comm 消息层。
+  3. 场景"唤醒新 agent 交流" → 通过记忆文件"留言"(写 concept 给它/读它的 concept)即可,不需实时对话——agent 本就不是常驻进程。
+- **和 sova 哲学一致**:sova 是"被唤醒才活、记忆跨项目累积"的角色,不是自主运行实体。"agent 自治协商"和 sova 模型有张力(没常驻进程怎么协商?)。编排者模式反而贴合:"编排者用工具操作多 agent 记忆"。
+- **状态**:✅ 已落地。`registry.py`/`comm.py`/`test_phase2.py` 已删,server.py 的 6 个 Phase 2 工具已移除。工具数 14→8。
+
 ---
 
 ## 3. 障碍清单(坎)
@@ -71,17 +82,17 @@
 
 ### 未完成的坎
 
-#### H5 — 🟡 Phase 2 测试不可重复运行(registry 状态污染)
-- **现状**:`tests/test_phase2.py` 修改真实 registry 且不回滚,第二次必挂。`comm` 有 `comm_clear()` 但 registry 无 reset 机制。
-- **影响**:回归基线不可信;CI 不可重复。但当前聚焦孤立 Agent、Phase 2 deprioritize,可暂搁。
-- **方案**:测试加 setup/teardown 或 fixture 快照;或给 registry 加 `reset_for_test()`。
-- **状态**:已复现失败;属 Phase 2 范畴,`run_tests.py` 已跳过它。
-
 #### H11 — 🟢 [已知限制,暂不修] 并发写同一 agent 的 expertise 会丢数据
 - **风险**:`wiki_write_concept` 非原子覆盖写;`append_log` 是 read-modify-write。两进程同时写同一 concept → 后覆盖先,无报错。
 - **实际量级**:窄。`projects/` 天然隔离(每项目独立文件),热点只在 `expertise/`(跨项目蒸馏共享区),而蒸馏本就是低频操作。
 - **方案(按工作量)**:① 文件锁(`fcntl`/`msvcrt`)顺序化;② 原子写(临时文件 + `os.replace`);③ 版本号/冲突检测(过度工程)。
 - **为什么暂不修**:还在验证核心闭环;文件锁 Windows 有坑;加锁是解决还没发生的问题。等真出现并发写再处理。
+
+#### H12 — 🟢 [未来债,暂不动] server.py 工具数增长后应按职责拆分
+- **现状**:`server.py` 8 个 `@mcp.tool` 平铺,Phase 1(8 个 wiki/agent 工具)都在。
+- **何时该拆**:工具数超过 ~15,或出现新的工具组(如未来加记忆压缩、向量化等)。
+- **怎么拆**:`server.py` 留 FastMCP 实例 + main() + 共享 `_dump`;工具按组进 `tools_wiki.py` 等,通过 FastMCP 的跨模块注册机制挂到 mcp。
+- **为什么暂不动**:8 个工具 170 行,没到痛;拆要验证 FastMCP 跨模块注册机制,有不确定性;现在拆是过早优化。
 
 ---
 
@@ -95,11 +106,10 @@
 | ~~2~~ | ~~H1+H7~~ | ✅ 已修 FTS5 检索 + persona 排除 | 规模红利命门解决,11 项回归锁定 |
 | ~~3~~ | ~~H8~~ | ✅ 已修 测试套纳入 run_tests.py | 防壳层 bug 回归 |
 | 4 | ~~H2~~ | ✅ 半自动蒸馏已落地(纯文档驱动) | 解决"懒得记",守住质量门禁;全自动待未来 |
-| ~~—~~ | ~~**改名**~~ | ✅ 已完成 代码层统一为 sova:包名 `sova`、命令 `sova-mcp`/`sova-init`、目录 `sova/`、环境变量 `SOVA_KB`/`SOVA_SHARED`、KB 路径 `sova/knowledge` | 对外品牌名 Sova 与代码内部命名一致;现有记忆已迁移 |
-| — | H5 | Phase 2 测试隔离 | 暂搁;做编排/通讯时一并修 |
+| ~~—~~ | ~~**改名**~~ | ✅ 已完成 代码层统一为 sova:包名 `sova`、命令 `sova-mcp`/`sova-init`、目录 `sova/`、环境变量 `SOVA_KB`、KB 路径 `sova/knowledge` | 对外品牌名 Sova 与代码内部命名一致;现有记忆已迁移 |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作,需要时做 |
 | — | 发布 | PyPI / `uvx` 公开分享 | 本机已解绑;分享只加发版动作,不改代码 |
 
-> **当前状态:核心闭环(唤醒→检索→引用→沉淀)已全部打通且可发布。** 剩余 H2(自动蒸馏)是增强,Phase 2(编排)是另一条线。
+> **当前状态:核心闭环(唤醒→检索→引用→沉淀)已全部打通且可发布。** 剩余 H2(自动蒸馏)是增强;多 agent 协作走编排者模式(D6),不需专门基础设施。
 
 > 原则延续 DESIGN.md（同目录）:**先用文件证明价值,再用 MCP 解耦 CLI,最后再考虑图谱。** 这份文档跟踪的是"兑现承诺路上"的具体坎,一条条来。
