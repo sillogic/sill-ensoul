@@ -18,7 +18,7 @@ Give your CLI agents experience that doesn't vanish when you switch projects, sw
 - **Agent isolation**: spin up multiple ensoulers (algorithm engineer, backend, testing, UI...) — each has its own memory bundle, no cross-contamination. Wake one, work with its experience.
 - **Memory is files**: plain markdown (following [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) — git-able, diff-able, editable in Obsidian. Vector stores are just an index; md is always source of truth.
 - **Zero external deps**: SQLite FTS5 full-text search (CJK char segmentation + BM25) — no OpenAI key, no Docker, no cloud service. Model-vendor-agnostic: inference always stays in your CLI.
-- **Proactive distillation**: when an agent hits a non-trivial pitfall or makes a reusable decision, it **proactively reminds you** "this is worth saving to the wiki" — you confirm before it writes. Neither relies on your discipline to remember, nor dumps garbage into memory.
+- **Proactive distillation**: when an agent hits a non-trivial pitfall or makes a reusable decision, it **proactively reminds you** "this is worth saving to the wiki" — you confirm before it writes. So you don't have to remember to write things down, and nothing lands in memory without your say-so.
 
 ---
 
@@ -39,7 +39,7 @@ The CLI's AI follows [SETUP.md](SETUP.md): installs the package → builds the K
 wake up alter-ego      # or 唤醒 alter-ego / 唤醒分身
 ```
 
-`alter-ego` is your digital twin (default agent, empty memory). Accumulate experience with it first; once a domain (algorithm/backend/...) has enough, tell the CLI "create an agent called algo-engineer" to split off a specialized ensouler.
+`alter-ego` is your digital twin (default agent, empty memory). Accumulate experience with it first; once a domain (algorithm/backend/ ...) has enough, tell the CLI "create an agent called algo-engineer" for a specialized role.
 
 <details>
 <summary>Don't want the AI to install? Manual 3 steps</summary>
@@ -83,7 +83,7 @@ Set `ENSOUL_KB=<path>` to put it anywhere (e.g. a Dropbox / iCloud folder for mu
 - **Shell** (`AGENTS.md` / `CLAUDE.md`) — one per CLI, defines "when to wake/search/distill", references the shared [WORKFLOW.md](WORKFLOW.md).
 - **Memory** (`knowledge/agents/<id>/`) — OKF markdown files, git-able, diff-able, human-readable.
 
-Core loop: **wake** (load persona + knowledge map) → **recall** (search relevant experience) → **cite** (reference real memory with concept_id) → **distill** (new experience, written only after you confirm) → retained across projects/sessions.
+Core loop: **wake** (load persona + knowledge map) → **recall** (search relevant experience) → **cite** (reference real memory with concept_id) → **distill** (new experience, written only after you confirm). Memory persists across projects and sessions.
 
 ---
 
@@ -95,7 +95,7 @@ Core loop: **wake** (load persona + knowledge map) → **recall** (search releva
 | `create_agent` | Create an ensouler (dir + persona + index + log template) |
 | `delete_agent` | Delete an ensouler (irreversible, confirm first) |
 | `agent_index` | Wake/switch ensouler (persona + knowledge map) |
-| `wiki_search` | Full-text search an ensouler's experience (FTS5 + BM25, Chinese-aware) |
+| `wiki_search` | Full-text search an ensouler's experience (FTS5 + BM25, with CJK segmentation) |
 | `wiki_read` | Read a concept's details |
 | `wiki_write_concept` | Distill new experience (type required) |
 | `wiki_append_log` | Log a change |
