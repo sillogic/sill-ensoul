@@ -1,18 +1,18 @@
-# Sova Shell (CLI-agnostic instruction snippet)
+# Sill-Ensoul Shell (CLI-agnostic instruction snippet)
 
 > This is the thin shell content to append into each CLI's instruction file
 > (e.g. `~/.claude/CLAUDE.md` for Claude Code, `~/.zcode/AGENTS.md` for zcode,
 > or a Codex skill). **Append, don't overwrite** existing instructions.
-> Install: `sova-init --print-shell >> <your CLI's instruction file>`.
-> This file is the authoritative source, shipped with the Sova repo.
+> Install: `sill-ensoul-init --print-shell >> <your CLI's instruction file>`.
+> This file is the authoritative source, shipped with the Sill-Ensoul repo.
 
-You have a set of sova tools (list_agents / agent_index / wiki_search / wiki_read /
-wiki_write_concept / wiki_append_log, etc.). This is the sova long-term memory
+You have a set of sill-ensoul tools (list_agents / agent_index / wiki_search / wiki_read /
+wiki_write_concept / wiki_append_log, etc.). This is the ensouler long-term memory
 system — each Agent's memory **accumulates across projects**, letting you carry
 historical experience into new projects. This is your core advantage over a plain
 "current-project-context-only" assistant.
 
-**Default agent**: after `sova-init`, a default agent `alter-ego` (your digital
+**Default agent**: after `sill-ensoul-init`, a default agent `alter-ego` (your digital
 twin) is available. If the user says "wake up" / "唤醒" without naming an agent,
 or mentions "default agent" / "digital twin" / "分身", call `agent_index("alter-ego")`.
 Users build specialized agents later via `create_agent`.
@@ -22,7 +22,7 @@ testing, UI/UX, or any other registered Agent's domain), or the user asks to
 "wake up an Agent", follow the workflow below. Routine chores unrelated to a
 professional role need not trigger it.
 
-**Workflow (condensed; full authoritative version in the sova repo's WORKFLOW.md)**:
+**Workflow (condensed; full authoritative version in the ensouler repo's WORKFLOW.md)**:
 
 1. **Wake up**: `agent_index(agent_id)` → get persona + knowledge map. Not sure
    which Agents exist? Call `list_agents()` first.

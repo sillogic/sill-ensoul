@@ -1,6 +1,6 @@
 # ROADMAP — 从"能跑"到"兑现核心承诺"的坎
 
-> 这是一份**活文档**,记录 Sova 在落地"不依赖 CLI 的、带长期记忆的多智能体系统"过程中,技术与设计上的障碍、决策与下一步。慢慢完善。
+> 这是一份**活文档**,记录 Sill-Ensoul 在落地"不依赖 CLI 的、带长期记忆的多智能体系统"过程中,技术与设计上的障碍、决策与下一步。慢慢完善。
 >
 > 阅读顺序:先看 §1(我们在赌什么)→ §2(已定的设计决策)→ §3(障碍清单)→ §4(下一步)。
 
@@ -51,13 +51,13 @@
 
 
 ### D6 — 多 agent 协作:编排者模式,废弃自治协商(Phase 2 已废)
-- **决策**:sova 的多 agent 协作走**编排者模式**——任何 agent 都能用现有 `wiki_*` 工具(`wiki_write_concept(agent_id=...)` / `wiki_read` / `wiki_search`)操作**其他** agent 的记忆。编排者(人或任一 agent)直接决定写谁的记忆、把结论分发给谁。
-- **废弃的 Phase 2**:原设计的 `registry`(所有权声明)+ `boundary_scan`(冲突检测)+ `comm` 协商 + `boundary_record`(契约)全部删除。它们是为"agent 自治协商边界"设计的,但 sova 是"编排者主导"模型,用不上——编排者知道在干什么,不用所有权声明防冲突。
+- **决策**:sill-ensoul 的多 agent 协作走**编排者模式**——任何 agent 都能用现有 `wiki_*` 工具(`wiki_write_concept(agent_id=...)` / `wiki_read` / `wiki_search`)操作**其他** agent 的记忆。编排者(人或任一 agent)直接决定写谁的记忆、把结论分发给谁。
+- **废弃的 Phase 2**:原设计的 `registry`(所有权声明)+ `boundary_scan`(冲突检测)+ `comm` 协商 + `boundary_record`(契约)全部删除。它们是为"agent 自治协商边界"设计的,但 sill-ensoul 是"编排者主导"模型,用不上——编排者知道在干什么,不用所有权声明防冲突。
 - **为什么废弃**(三个场景触发反思):
   1. 场景"让 sova-dev 更新 algo-engineer 记忆" → 现有 `wiki_write_concept(agent_id=...)` 直接能做,不需任何 Phase 2 设施。
   2. 场景"规划完分发给两个 agent" → 编排者直接 `wiki_write_concept` 到各方记忆即可,不需 comm 消息层。
   3. 场景"唤醒新 agent 交流" → 通过记忆文件"留言"(写 concept 给它/读它的 concept)即可,不需实时对话——agent 本就不是常驻进程。
-- **和 sova 哲学一致**:sova 是"被唤醒才活、记忆跨项目累积"的角色,不是自主运行实体。"agent 自治协商"和 sova 模型有张力(没常驻进程怎么协商?)。编排者模式反而贴合:"编排者用工具操作多 agent 记忆"。
+- **和 sill-ensoul 哲学一致**:sill-ensoul 是"被唤醒才活、记忆跨项目累积"的角色,不是自主运行实体。"agent 自治协商"和 sill-ensoul 模型有张力(没常驻进程怎么协商?)。编排者模式反而贴合:"编排者用工具操作多 agent 记忆"。
 - **状态**:✅ 已落地。`registry.py`/`comm.py`/`test_phase2.py` 已删,server.py 的 6 个 Phase 2 工具已移除。工具数 14→8。
 
 ---
@@ -73,11 +73,11 @@
 | H1 ✅ | 检索质量随规模退化(子串计数无分词) | `fts.py` SQLite FTS5 + BM25;CJK 索引端按字分词(`_segment_for_index`),查询端同步分词,零依赖 | 规模红利命门;FTS 表 title 被分词污染→`search` 用原始 concept title |
 | H2 ✅ | 记忆"长"靠蒸馏,人会懒得记 | 提醒式半自动(纯文档):agent 主动判断时机+提炼,用户确认才写 | 全自动有质量风险(LLM 产垃圾稀释检索);半自动守质量门禁 |
 | H3 ✅ | 适配层缺失,CLI 不可移植 | D2 三层分离落地:WORKFLOW.md(CLI 无关)+ 各 CLI 薄壳 | 工具调用词跨 CLI 一致,每 CLI 不同的只有"怎么触发" |
-| H4 ✅ | KB 在项目仓库内,违背跨项目理念 | `_default_kb_root()` 平台感知全局默认(Win `%LOCALAPPDATA%/sova/knowledge`) | 跨项目 Agent 的记忆不该属于任一项目 |
+| H4 ✅ | KB 在项目仓库内,违背跨项目理念 | `_default_kb_root()` 平台感知全局默认(Win `%LOCALAPPDATA%/ensoul/knowledge`) | 跨项目 Agent 的记忆不该属于任一项目 |
 | H6 ✅ | `wiki_read` 因 datetime 序列化崩溃 | `server.py` 的 `_dump` 加 `_json_default`,datetime→ISO 字符串 | D1 价值兑现:bug 定位在壳层,核心无辜,3 行修好 |
 | H7 ✅ | persona(AGENT.md)污染搜索与 concept 清单 | `EXTRA_NON_CONCEPT = {"agent.md"}`,`_iter_concepts` 排除 | persona 不该进检索索引 |
 | H8 ✅ | 缺 MCP 工具返回值契约测试 | `run_tests.py` 纳入 4 测试,自建临时 KB | 测试不依赖 repo 预存数据(H4) |
-| H9 ✅ | server 绑死 cwd | `pyproject.toml` 定义 `sova-mcp` 控制台命令 + `pip install -e .` | 任意 cwd 直接 `sova-mcp` |
+| H9 ✅ | server 绑死 cwd | `pyproject.toml` 定义 `sill-ensoul-mcp` 控制台命令 + `pip install -e .` | 任意 cwd 直接 `sill-ensoul-mcp` |
 | H10 ✅ | 三场景规则(自我认知/项目查询/身份保持) | 写入 WORKFLOW.md §1.1/§2.1/§2.2 | 身份保持是"软身份"换"CLI 无关"的代价,缓解不完美 |
 
 ### 未完成的坎
@@ -106,7 +106,7 @@
 | ~~2~~ | ~~H1+H7~~ | ✅ 已修 FTS5 检索 + persona 排除 | 规模红利命门解决,11 项回归锁定 |
 | ~~3~~ | ~~H8~~ | ✅ 已修 测试套纳入 run_tests.py | 防壳层 bug 回归 |
 | 4 | ~~H2~~ | ✅ 半自动蒸馏已落地(纯文档驱动) | 解决"懒得记",守住质量门禁;全自动待未来 |
-| ~~—~~ | ~~**改名**~~ | ✅ 已完成 代码层统一为 sova:包名 `sova`、命令 `sova-mcp`/`sova-init`、目录 `sova/`、环境变量 `SOVA_KB`、KB 路径 `sova/knowledge` | 对外品牌名 Sova 与代码内部命名一致;现有记忆已迁移 |
+| ~~—~~ | ~~**改名**~~ | ✅ 已完成 代码层统一为 sill-ensoul:包名 `sill-ensoul`、命令 `sill-ensoul-mcp`/`sill-ensoul-init`、目录 `ensoul/`、环境变量 `ENSOUL_KB`、KB 路径 `ensoul/knowledge` | 对外品牌名 Sill-Ensoul 与代码内部命名一致;现有记忆已迁移 |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作,需要时做 |
 | — | 发布 | PyPI / `uvx` 公开分享 | 本机已解绑;分享只加发版动作,不改代码 |
 

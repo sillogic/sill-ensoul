@@ -3,7 +3,7 @@
 Run from the repo root:
     python -m tests.test_smoke
 """
-from sova import okf
+from ensoul import okf
 
 
 def main() -> None:

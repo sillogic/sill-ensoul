@@ -8,7 +8,7 @@
 import shutil
 import tempfile
 
-from sova import okf, fts
+from ensoul import okf, fts
 
 AGENT = "search-regression-fixture"  # 临时 agent,跑完删除
 
@@ -40,7 +40,7 @@ def main():
     # 临时 KB,完全隔离
     with tempfile.TemporaryDirectory() as tmp:
         import os
-        os.environ["SOVA_KB"] = tmp
+        os.environ["ENSOUL_KB"] = tmp
         kb = okf.kb_root()
         try:
             setup_agent(kb)
@@ -110,7 +110,7 @@ def main():
             # Close cached sqlite connections BEFORE TemporaryDirectory tries
             # to delete index.db (Windows holds an exclusive lock while open).
             fts.reset_cache_for_tests()
-            del os.environ["SOVA_KB"]
+            del os.environ["ENSOUL_KB"]
 
 
 if __name__ == "__main__":

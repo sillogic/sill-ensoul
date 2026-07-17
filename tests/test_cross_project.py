@@ -31,14 +31,14 @@ AGENT = "qa-tester"  # 隔离的测试 agent,跑完随临时 KB 一起清理,绝
 
 
 def _server_params(kb: str, cwd: str):
-    """同一个临时 KB(SOVA_KB 不变),只改 cwd —— 模拟换项目目录。
-    PYTHONPATH 指向 repo,这样 server 从任意 cwd 启动都能 import sova
+    """同一个临时 KB(ENSOUL_KB 不变),只改 cwd —— 模拟换项目目录。
+    PYTHONPATH 指向 repo,这样 server 从任意 cwd 启动都能 import ensoul
     (暴露了 H9:server 不应依赖 cwd,需 PYTHONPATH/打包才能跨项目用)。"""
     env = {**os.environ,
-           "SOVA_KB": kb,
+           "ENSOUL_KB": kb,
            "PYTHONPATH": str(REPO)}
     return StdioServerParameters(
-        command=sys.executable, args=["-m", "sova.server"],
+        command=sys.executable, args=["-m", "ensoul.server"],
         cwd=cwd, env=env,
     )
 
@@ -119,7 +119,7 @@ async def main():
                     await s.initialize()
                     call = await _tools(s)
 
-                    # 注意:cwd 变了,但 SOVA_KB(临时 KB)没变 -> 记忆是角色作用域
+                    # 注意:cwd 变了,但 ENSOUL_KB(临时 KB)没变 -> 记忆是角色作用域
                     idx = await call("agent_index", agent_id=AGENT)
                     print(f"[B1] 在 B 项目唤醒 {AGENT} -> "
                           f"已有 concept 数: {len(idx['concepts'])}  (预期 1,带着 A 项目的经验)")

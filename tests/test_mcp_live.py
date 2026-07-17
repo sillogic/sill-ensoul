@@ -1,4 +1,4 @@
-"""用官方 MCP 客户端 spawn sova server 并调用工具。
+"""用官方 MCP 客户端 spawn sill-ensoul server 并调用工具。
 
 证明 server.py 这一壳层能独立工作（D1：只是 okf 的透传层）。
 不依赖任何 CLI——纯 in-process MCP 客户端。
@@ -32,9 +32,9 @@ async def main():
     with tempfile.TemporaryDirectory() as tmp_kb:
         params = StdioServerParameters(
             command=sys.executable,
-            args=["-m", "sova.server"],
+            args=["-m", "ensoul.server"],
             cwd=str(REPO),
-            env={**os.environ, "SOVA_KB": str(tmp_kb)},
+            env={**os.environ, "ENSOUL_KB": str(tmp_kb)},
         )
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:

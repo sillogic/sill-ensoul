@@ -1,8 +1,8 @@
-"""`sova-init` console script: initialize an empty global KB and print
+"""`sill-ensoul-init` console script: initialize an empty global KB and print
 per-CLI setup instructions.
 
-Designed for sharing sova with teammates: they `pip install` the package,
-run `sova-init`, then follow the printed steps to wire it into their CLI.
+Designed for sharing sill-ensoul with teammates: they `pip install` the package,
+run `sill-ensoul-init`, then follow the printed steps to wire it into their CLI.
 The KB starts empty — each user builds their own agents via wiki_write_concept.
 """
 from __future__ import annotations
@@ -16,15 +16,15 @@ from .okf import kb_root, create_agent
 # carries it — users don't need to curl it separately. This is the same content
 # as repo-root SHELL.md / the zcode AGENTS.md body, minus the CLI-specific
 # prefix note (printed separately per CLI below).
-_SHELL = """# Sova Long-Term Memory System (conditionally triggered)
+_SHELL = """# Sill-Ensoul Long-Term Memory System (conditionally triggered)
 
-You have a set of sova tools (list_agents / agent_index / wiki_search / wiki_read /
-wiki_write_concept / wiki_append_log, etc.). This is the sova long-term memory
+You have a set of sill-ensoul tools (list_agents / agent_index / wiki_search / wiki_read /
+wiki_write_concept / wiki_append_log, etc.). This is the ensouler long-term memory
 system — each Agent's memory **accumulates across projects**, letting you carry
 historical experience into new projects. This is your core advantage over a plain
 "current-project-context-only" assistant.
 
-**Default agent**: after `sova-init`, a default agent `alter-ego` (your digital
+**Default agent**: after `sill-ensoul-init`, a default agent `alter-ego` (your digital
 twin) is available. If the user says "wake up" / "唤醒" without naming an agent,
 or mentions "default agent" / "digital twin" / "分身", call `agent_index("alter-ego")`.
 Users build specialized agents later via `create_agent`.
@@ -34,7 +34,7 @@ testing, UI/UX, or any other registered Agent's domain), or the user asks to
 "wake up an Agent", follow the workflow below. Routine chores unrelated to a
 professional role need not trigger it.
 
-**Workflow (condensed; full authoritative version in the sova repo's WORKFLOW.md)**:
+**Workflow (condensed; full authoritative version in the ensouler repo's WORKFLOW.md)**:
 
 1. **Wake up**: `agent_index(agent_id)` -> get persona + knowledge map. Not sure
    which Agents exist? Call `list_agents()` first.
@@ -115,7 +115,7 @@ def main() -> None:
     already = agents_dir.exists() and any(agents_dir.iterdir())
 
     print("=" * 60)
-    print("  sova initialization")
+    print("  sill-ensoul initialization")
     print("=" * 60)
     print()
     print(f"Knowledge base location: {kb}")
@@ -147,14 +147,14 @@ def main() -> None:
     print("(repo root), a machine-readable adaptation intent. Point your CLI's")
     print("AI at it and let the CLI wire itself in:")
     print()
-    print('  In your CLI, say: "set up sova from <repo>/SETUP.md"')
+    print('  In your CLI, say: "set up sill-ensoul from <repo>/SETUP.md"')
     print()
     print("The CLI reads SETUP.md and registers the MCP server + installs the")
-    print("shell itself, using its own current config mechanism. sova stays")
+    print("shell itself, using its own current config mechanism. sill-ensoul stays")
     print("CLI-agnostic and never tracks each CLI's config changes.")
     print()
-    print("Manual option: `sova-init --print-shell >> <CLI instruction file>`")
-    print("(append, don't overwrite) + register `sova-mcp` as an MCP server.")
+    print("Manual option: `sill-ensoul-init --print-shell >> <CLI instruction file>`")
+    print("(append, don't overwrite) + register `sill-ensoul-mcp` as an MCP server.")
     print()
     print("=" * 60)
     print('  Done! Restart your CLI, then say "wake up alter-ego" to test.')

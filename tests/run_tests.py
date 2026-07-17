@@ -1,10 +1,17 @@
-"""One-command test runner for sova.
+"""One-command test runner for sill-ensoul.
 
 Usage:
-    python -m tests.run_tests
+    python -m tests.run_tests      # from repo root (preferred)
+    python tests/run_tests.py      # also works
 """
 import subprocess
 import sys
+from pathlib import Path
+
+# Repo root = parent of this tests/ directory. Tests are imported as
+# `tests.test_*`, so cwd must be the repo root regardless of how the
+# runner is invoked.
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
 
 
 def run(name: str) -> bool:
@@ -13,7 +20,7 @@ def run(name: str) -> bool:
     print(f"{'='*50}\n")
     result = subprocess.run(
         [sys.executable, "-m", name],
-        cwd=sys.path[0] if sys.path else ".",
+        cwd=_REPO_ROOT,
     )
     return result.returncode == 0
 

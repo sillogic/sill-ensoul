@@ -31,31 +31,31 @@ _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", re.DOTALL)
 def _default_kb_root() -> Path:
     """Platform-appropriate default for the knowledge base, so the server is not
     bound to the repo dir (H4/H9). Precedence:
-      SOVA_KB  ->  platform default:
-        win32   ->  %LOCALAPPDATA%/sova/knowledge
-        darwin  ->  ~/Library/Application Support/sova/knowledge
-        else    ->  XDG_DATA_HOME/sova/knowledge  (default ~/.local/share/sova/knowledge)
-      ->  ~/.sova/knowledge   (last-resort, works everywhere)."""
+      ENSOUL_KB  ->  platform default:
+        win32   ->  %LOCALAPPDATA%/ensoul/knowledge
+        darwin  ->  ~/Library/Application Support/ensoul/knowledge
+        else    ->  XDG_DATA_HOME/ensoul/knowledge  (default ~/.local/share/ensoul/knowledge)
+      ->  ~/.ensoul/knowledge   (last-resort, works everywhere)."""
     if sys.platform == "win32":
         local = os.environ.get("LOCALAPPDATA")
         if local:
-            return Path(local) / "sova" / "knowledge"
+            return Path(local) / "ensoul" / "knowledge"
     elif sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / "sova" / "knowledge"
+        return Path.home() / "Library" / "Application Support" / "ensoul" / "knowledge"
     else:
         xdg = os.environ.get("XDG_DATA_HOME")
         if xdg:
-            return Path(xdg) / "sova" / "knowledge"
+            return Path(xdg) / "ensoul" / "knowledge"
         xdg_default = Path.home() / ".local" / "share"
         if xdg_default.exists() or True:  # XDG spec default
-            return xdg_default / "sova" / "knowledge"
-    return Path.home() / ".sova" / "knowledge"
+            return xdg_default / "ensoul" / "knowledge"
+    return Path.home() / ".ensoul" / "knowledge"
 
 
 def kb_root() -> Path:
-    """Knowledge root dir. SOVA_KB overrides; else a global default
+    """Knowledge root dir. ENSOUL_KB overrides; else a global default
     (NOT the repo dir) so the package is location-independent once installed."""
-    env = os.environ.get("SOVA_KB")
+    env = os.environ.get("ENSOUL_KB")
     if env:
         return Path(env).expanduser().resolve()
     return _default_kb_root()

@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "sova": {
-      "command": "sova-mcp"
+    "sill-ensoul": {
+      "command": "sill-ensoul-mcp"
     }
   }
 }

@@ -1,7 +1,12 @@
-"""sova MCP server: exposes an OKF knowledge base as agent tools.
+"""sill-ensoul MCP server: exposes an OKF knowledge base as agent tools.
 
-Run as a stdio MCP server:  python -m sova.server
+Run as a stdio MCP server:  python -m ensoul.server
 Register it from Codex / Claude Code / OpenCode (see README.md).
+
+Terminology: an "agent" in the tool names below is what users call an "ensouler"
+(a role-scoped memory bundle). The MCP tool names keep the `agent_*` prefix for
+contract stability (existing shells reference them); the user-facing term is
+"ensouler". See docs/ROADMAP.md (rename decision) for rationale.
 """
 from __future__ import annotations
 
@@ -12,7 +17,7 @@ from mcp.server.fastmcp import FastMCP
 
 from . import okf
 
-mcp = FastMCP("sova")
+mcp = FastMCP("sill-ensoul-mcp")
 
 
 def _json_default(o):
@@ -105,7 +110,7 @@ def wiki_append_log(agent_id: str, action: str, detail: str) -> str:
 
 
 def main() -> None:
-    """Entry point for the `sova-mcp` console script (see pyproject.toml).
+    """Entry point for the `sill-ensoul-mcp` console script (see pyproject.toml).
     Runs the stdio MCP server. Works from any cwd once the package is installed."""
     mcp.run()
 

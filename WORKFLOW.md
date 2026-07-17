@@ -1,6 +1,6 @@
-# Sova 记忆工作流（CLI 无关权威版本）
+# Sill-Ensoul 记忆工作流（CLI 无关权威版本）
 
-> **这份文档是所有 CLI 共用的"如何使用 Sova 记忆系统"的权威说明。**
+> **这份文档是所有 CLI 共用的"如何使用 Sill-Ensoul 记忆系统"的权威说明。**
 > 它只讲工作流和工具调用逻辑，不含任何 CLI 特定的触发方式。
 > zcode 的 AGENTS.md、Claude Code 的 CLAUDE.md、Codex 的 skill 都应**指向本文档**，
 > 各自只补"在某个 CLI 里怎么触发"，不重复本文内容。这就是 D2 三层分离的 (b) 层。
@@ -9,7 +9,7 @@
 
 ## 0. 前提：你有一套跨项目的长期记忆
 
-你（CLI 中的助手）背后挂着一组叫 **sova** 的工具。它们读写一个**角色作用域**的知识库——每个 Agent（如 `algo-engineer`）的记忆跨所有项目累积，不属于任何一个项目。这是你区别于"只有当前项目上下文"的关键能力：**你能带着历史经验进新项目。**
+你（CLI 中的助手）背后挂着一组叫 **sill-ensoul** 的工具。它们读写一个**角色作用域**的知识库——每个 Agent（如 `algo-engineer`）的记忆跨所有项目累积，不属于任何一个项目。这是你区别于"只有当前项目上下文"的关键能力：**你能带着历史经验进新项目。**
 
 **核心心智**：记忆的"用"是检索式读，记忆的"长"是提炼式写。原文不进记忆，提炼才进。
 
@@ -159,11 +159,11 @@
 
 | 工具 | 何时用 |
 |---|---|
-| `list_agents` | 看有哪些 sova 可用 |
-| `create_agent` | 新建一个 sova（建目录 + persona + index + log 模板） |
-| `delete_agent` | 删除一个 sova（**不可逆，需用户确认**） |
-| `agent_index` | 唤醒 sova / 切换 sova（拿 persona + 地图） |
-| `wiki_search` | 按关键词检索某 sova 的经验（BM25） |
+| `list_agents` | 看有哪些 ensouler 可用 |
+| `create_agent` | 新建一个 ensouler（建目录 + persona + index + log 模板） |
+| `delete_agent` | 删除一个 ensouler（**不可逆，需用户确认**） |
+| `agent_index` | 唤醒 ensouler / 切换 ensouler（拿 persona + 地图） |
+| `wiki_search` | 按关键词检索某 ensouler 的经验（BM25） |
 | `wiki_read` | 读某条 concept 的细节 |
 | `wiki_write_concept` | 沉淀新经验（type 必填） |
 | `wiki_append_log` | 记一笔变更 |
@@ -185,7 +185,7 @@
 
 ## 8. Git 协作纪律（所有 Agent、所有项目通用）
 
-这条规则对**所有 sova、所有项目**生效——无论你是 sova-dev / algo-engineer / backend-engineer / alter-ego，只要在 git 仓库里工作就遵守。
+这条规则对**所有 ensouler、所有项目**生效——无论你是 sova-dev / algo-engineer / backend-engineer / alter-ego，只要在 git 仓库里工作就遵守。
 
 ### 8.1 Commit message 一律用英文
 

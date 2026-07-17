@@ -1,12 +1,12 @@
-# Sova
+# Sill-Ensoul
 
 English | [简体中文](README.md)
 
-A multi-agent system with long-term memory (OKF Wiki), decoupled from CLI and model vendors. Each sova (Agent) owns an OKF knowledge bundle; a lightweight MCP server exposes these bundles as tools, letting you read/write sova's memory directly from CLIs like zcode / Claude Code / Codex.
+A multi-agent system with long-term memory (OKF Wiki), decoupled from CLI and model vendors. Each ensouler (Agent) owns an OKF knowledge bundle; a lightweight MCP server exposes these bundles as tools, letting you read/write ensouler's memory directly from CLIs like zcode / Claude Code / Codex.
 
-> **Sova** — cross-project long-term memory for CLI agents. Each woken agent is also a **sova** (plural: sovas).
+> **Sill-Ensoul** — cross-project long-term memory for CLI agents. Each woken agent is also an **ensouler** (plural: ensoulers).
 
-**Core differentiator**: Memory is **role-scoped** — a sova's experience accumulates across all projects, unlike existing CLIs that only have project-level memory. Lessons the algo-engineer sova learned in project A carry over to project B.
+**Core differentiator**: Memory is **role-scoped** — an ensouler's experience accumulates across all projects, unlike existing CLIs that only have project-level memory. Lessons the algo-engineer ensouler learned in project A carry over to project B.
 
 > For the full README (in Chinese), see [README.md](README.md). Design background: [docs/DESIGN.md](docs/DESIGN.md). Progress: [docs/ROADMAP.md](docs/ROADMAP.md). Memory format follows Google's [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) (OKF v0.1).
 
@@ -16,12 +16,12 @@ A multi-agent system with long-term memory (OKF Wiki), decoupled from CLI and mo
 
 After cloning the repo, do ONE of these in your CLI (Claude Code / Codex / zcode, etc.):
 
-- say: `set up sova from <repo>/SETUP.md`
+- say: `set up sill-ensoul from <repo>/SETUP.md`
 - or more directly: **copy-paste the contents of [SETUP.md](SETUP.md)** into the chat and hit enter
 
-Your CLI's AI follows SETUP.md: it `pip install`s the sova package (will ask your OK first), runs `sova-init` to build the KB and default agent `alter-ego`, then registers the MCP server + installs the shell itself. You send just that one message; after it's done, restart the CLI and say "wake up alter-ego".
+Your CLI's AI follows SETUP.md: it `pip install`s the sill-ensoul package (will ask your OK first), runs `sill-ensoul-init` to build the KB and default agent `alter-ego`, then registers the MCP server + installs the shell itself. You send just that one message; after it's done, restart the CLI and say "wake up alter-ego".
 
-> Prefer to install the package yourself? Run `pip install -e <repo>` + `sova-init`, then let the AI do only the adaptation.
+> Prefer to install the package yourself? Run `pip install -e <repo>` + `sill-ensoul-init`, then let the AI do only the adaptation.
 
 > **First use**: after wiring up your CLI, open a new session and say **`wake up alter-ego`** — this is your digital twin (the default agent), with empty memory. Accumulate experience with it first; split off a specialized agent via `create_agent` when a domain has enough. Saying "wake up" / "digital twin" / "唤醒分身" also works — the shell recognizes them.
 
@@ -29,11 +29,11 @@ Your CLI's AI follows SETUP.md: it `pip install`s the sova package (will ask you
 
 ### Share with a teammate (any MCP-capable CLI)
 
-Send them the repo URL and have them either say `set up sova from <repo>/SETUP.md` in their CLI, or paste the contents of [SETUP.md](SETUP.md) into the chat. They run nothing themselves — their CLI's AI runs the whole flow (install package + init KB + adapt the CLI). sova never hardcodes any CLI's config format; when CLIs change, the AI adapts, sova doesn't. After setup, restart the CLI and say "wake up alter-ego" to start.
+Send them the repo URL and have them either say `set up sill-ensoul from <repo>/SETUP.md` in their CLI, or paste the contents of [SETUP.md](SETUP.md) into the chat. They run nothing themselves — their CLI's AI runs the whole flow (install package + init KB + adapt the CLI). sill-ensoul never hardcodes any CLI's config format; when CLIs change, the AI adapts, sill-ensoul doesn't. After setup, restart the CLI and say "wake up alter-ego" to start.
 
 After installing, open a new Claude Code session — a default agent `alter-ego` (your digital twin) is ready. Say "wake up alter-ego" to start accumulating experience.
 
-> **Privacy**: `knowledge/` is in `.gitignore` — your private memory never enters the repo. Teammates get an empty KB; each person's sova memory is independent.
+> **Privacy**: `knowledge/` is in `.gitignore` — your private memory never enters the repo. Teammates get an empty KB; each person's ensouler memory is independent.
 
 ---
 
@@ -42,14 +42,14 @@ After installing, open a new Claude Code session — a default agent `alter-ego`
 ```
   zcode / Claude Code / Codex   (inference runs in each CLI's model vendor, not locked)
            |  load persona + wiki slice (thin shell: AGENTS.md / CLAUDE.md)
-        MCP server (sova/, memory engine, 8 tools)
+        MCP server (ensoul/, memory engine, 8 tools)
            |  read/write
   knowledge/agents/<id>/  ← one OKF bundle per agent (md files, global KB)
 ```
 
 Three-layer separation (design decisions D1/D2, see docs/ROADMAP.md):
 
-- **Engine** (`sova/`) — CLI-agnostic, handles data/tools only, no inference.
+- **Engine** (`ensoul/`) — CLI-agnostic, handles data/tools only, no inference.
 - **Shell** (`AGENTS.md` / `CLAUDE.md`) — one per CLI, defines "when to wake/search/distill", references the shared [WORKFLOW.md](WORKFLOW.md).
 - **Memory** (`knowledge/agents/<id>/`) — OKF markdown files, git-able, diff-able, human-readable (view in Obsidian).
 
@@ -59,11 +59,11 @@ Three-layer separation (design decisions D1/D2, see docs/ROADMAP.md):
 
 | Tool | Purpose |
 |---|---|
-| `list_agents` | List all sovas |
-| `create_agent` | Create a sova (dir + persona + index + log template) |
-| `delete_agent` | Delete a sova (irreversible, confirm first) |
-| `agent_index` | Wake/switch sova (persona + knowledge map) |
-| `wiki_search` | Full-text search a sova's experience (FTS5 + BM25) |
+| `list_agents` | List all ensoulers |
+| `create_agent` | Create an ensouler (dir + persona + index + log template) |
+| `delete_agent` | Delete an ensouler (irreversible, confirm first) |
+| `agent_index` | Wake/switch ensouler (persona + knowledge map) |
+| `wiki_search` | Full-text search an ensouler's experience (FTS5 + BM25) |
 | `wiki_read` | Read a concept's details |
 | `wiki_write_concept` | Distill new experience (type required) |
 | `wiki_append_log` | Log a change |
@@ -74,7 +74,7 @@ Three-layer separation (design decisions D1/D2, see docs/ROADMAP.md):
 
 ## Key Features
 
-- **Role-scoped memory**: sova experience accumulates across projects, not project-level.
+- **Role-scoped memory**: ensouler experience accumulates across projects, not project-level.
 - **OKF file-based**: memory is markdown, git-able/diff-able, editable in Obsidian. md is always source of truth.
 - **FTS5 Chinese search**: SQLite FTS5 + CJK char segmentation + BM25, zero dependencies.
 - **Cross-CLI/cross-model**: MCP is the interface, inference in each CLI's vendor, not locked.
@@ -85,7 +85,7 @@ Three-layer separation (design decisions D1/D2, see docs/ROADMAP.md):
 ## Status
 
 - ✅ Core loop works: wake → recall → cite → distill → cross-project retention.
-- ✅ Installable: `pip install` one-liner, `sova-init` self-boots CLI setup.
+- ✅ Installable: `pip install` one-liner, `sill-ensoul-init` self-boots CLI setup.
 - ✅ Cross-CLI verified: zcode + Claude Code both adapted.
 - 🟡 Not done: sleeptime fully-auto distillation.
 - See [docs/ROADMAP.md](docs/ROADMAP.md).

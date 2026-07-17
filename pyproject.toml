@@ -3,24 +3,24 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sova"
+name = "sill-ensoul"
 version = "0.1.0"
 description = "OKF-backed long-term memory for agents, exposed via MCP. CLI- and model-agnostic."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "sova" }]
+authors = [{ name = "sill-ensoul" }]
 dependencies = [
     "mcp>=1.2",
     "pyyaml>=6.0",
 ]
 
 [project.scripts]
-# 装完后,任意 cwd 直接跑 `sova-mcp` 即启动 stdio MCP server。
-# 这就是解绑 cwd 的关键:不再依赖 `python -m sova.server` + cwd=repo。
-sova-mcp = "sova.server:main"
+# 装完后,任意 cwd 直接跑 `sill-ensoul-mcp` 即启动 stdio MCP server。
+# 这就是解绑 cwd 的关键:不再依赖 `python -m ensoul.server` + cwd=repo。
+sill-ensoul-mcp = "ensoul.server:main"
 # 初始化全局 KB + 打印各 CLI 适配步骤。分享给同事时,他装完跑这个就行。
-sova-init = "sova.init_cmd:main"
+sill-ensoul-init = "ensoul.init_cmd:main"
 
 [tool.setuptools]
-packages = ["sova"]
+packages = ["ensoul"]
