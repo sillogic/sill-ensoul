@@ -6,7 +6,7 @@
 
 **核心差异化**：记忆是**角色作用域**的——一个 sova 的经验跨所有项目累积，而不是像现有 CLI 那样只有项目级记忆。algo-engineer sova 在项目 A 学到的教训，项目 B 能用到。
 
-> 设计背景见 [DESIGN.md](DESIGN.md)。记忆格式遵循 Google [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（OKF v0.1）。进度跟踪见 [ROADMAP.md](ROADMAP.md)。
+> 设计背景见 [docs/DESIGN.md](docs/DESIGN.md)。记忆格式遵循 Google [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（OKF v0.1）。进度跟踪见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 ---
 
@@ -20,7 +20,7 @@
   knowledge/agents/<id>/  ← 每个 Agent 一个 OKF bundle（md 文件，全局 KB）
 ```
 
-三层分离（设计决策 D1/D2，详见 ROADMAP.md）：
+三层分离（设计决策 D1/D2，详见 docs/ROADMAP.md）：
 
 - **引擎层**（`sova/`）— CLI 无关，只管数据/工具，不碰推理。
 - **薄壳层**（`AGENTS.md` / `CLAUDE.md`）— 每 CLI 一份，定义"何时唤醒/检索/沉淀"，引用共享的 [WORKFLOW.md](WORKFLOW.md)。
@@ -99,7 +99,7 @@ sova/                         # 仓库根
   tests/                      # 4 个测试，python run_tests.py 一键跑（自建临时 KB，不依赖 repo）
   WORKFLOW.md                 # CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
   SHELL.md                    # CLI 无关薄壳（权威源，随包发布）
-  DESIGN.md / ROADMAP.md      # 设计背景 / 进度跟踪
+  docs/                       # 深入阅读：DESIGN.md（设计背景）/ ROADMAP.md（进度/决策）
   pyproject.toml              # 包定义（sova-mcp + sova-init 命令）
 ```
 
@@ -110,7 +110,7 @@ sova/                         # 仓库根
 ## 测试
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 python run_tests.py
 ```
 
@@ -165,4 +165,4 @@ python run_tests.py
 - ✅ 可发布：`pip install` 一键装，`sova-init` 自举适配各 CLI。
 - ✅ 跨 CLI 验证：zcode + Claude Code 均适配成功。
 - 🟡 暂缓：Phase 2 多 Agent 编排、sleeptime 全自动蒸馏。
-- 详见 [ROADMAP.md](ROADMAP.md)。
+- 详见 [docs/ROADMAP.md](docs/ROADMAP.md)。

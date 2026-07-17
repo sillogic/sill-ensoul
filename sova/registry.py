@@ -3,7 +3,7 @@
 shared/registry.json is the 'blackboard': each agent declares what it owns and
 what it intends to touch. boundary_scan() compares every pair and surfaces
 overlaps so the orchestrator can trigger a negotiation before two agents step
-on each other (DESIGN.md 5.1-5.2).
+on each other (docs/DESIGN.md 5.1-5.2).
 """
 from __future__ import annotations
 

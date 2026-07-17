@@ -2,7 +2,7 @@
 
 Messages are appended to shared/mailbox.jsonl (one JSON object per line), so
 the communication log is transparent and greppable. Resolved boundaries are
-written as markdown contracts under shared/contracts/ (DESIGN.md 5.3-5.4).
+written as markdown contracts under shared/contracts/ (docs/DESIGN.md 5.3-5.4).
 """
 from __future__ import annotations
 
