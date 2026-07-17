@@ -55,13 +55,12 @@
 
 ### 自己装（从 GitHub）
 
-clone 仓库后，在你的 CLI（Claude Code / Codex / zcode 等）里说一句：
+clone 仓库后，在你的 CLI（Claude Code / Codex / zcode 等）里二选一：
 
-```
-帮我配置 sova，按 <repo>/SETUP.md 来
-```
+- 说一句：`帮我配置 sova，按 <repo>/SETUP.md 来`
+- 或更直接：把 [SETUP.md](SETUP.md) 的内容**复制粘贴**进对话框，按回车
 
-CLI 的 AI 会读 [SETUP.md](SETUP.md)：先 `pip install` 装 sova 包（会征求你同意）、跑 `sova-init` 建知识库和默认 agent `alter-ego`、然后自己注册 MCP server + 装薄壳。全程你只说这一句话，装完重启 CLI 说"唤醒 alter-ego"即可。
+CLI 的 AI 会按 SETUP.md：先 `pip install` 装 sova 包（会征求你同意）、跑 `sova-init` 建知识库和默认 agent `alter-ego`、然后自己注册 MCP server + 装薄壳。全程你只发一次，装完重启 CLI 说"唤醒 alter-ego"即可。
 
 > 不想让 AI 装包？自己敲 `pip install -e <repo>` + `sova-init`，再让 AI 适配也行。
 
@@ -71,13 +70,7 @@ CLI 的 AI 会读 [SETUP.md](SETUP.md)：先 `pip install` 装 sova 包（会征
 
 ### 分享给同事（他装了任意 MCP-capable CLI）
 
-发给他仓库地址，让他在 CLI 里说一句：
-
-```
-帮我配置 sova，按 <repo>/SETUP.md 来
-```
-
-他什么都不用敲——CLI 的 AI 读 [SETUP.md](SETUP.md) 跑完全程（装包 + 建库 + 适配）。sova 不绑死任何 CLI 的配置方式，CLI 更新了也不用改 sova。适配完重启 CLI，说"唤醒 alter-ego"开始。
+发给他仓库地址，让他在 CLI 里二选一：说 `帮我配置 sova，按 <repo>/SETUP.md 来`，或直接把 [SETUP.md](SETUP.md) 内容贴进对话框。他什么都不用敲——CLI 的 AI 跑完全程（装包 + 建库 + 适配）。sova 不绑死任何 CLI 的配置方式，CLI 更新了也不用改 sova。适配完重启 CLI，说"唤醒 alter-ego"开始。
 
 ### 从 PyPI 装（发布后）
 

@@ -1,10 +1,13 @@
 # Sova CLI Setup (machine-readable adaptation intent)
 
 > **Who reads this**: the AI inside the user's CLI (Claude Code / Codex / zcode /
-> any MCP-capable CLI). The user will point you here with a prompt like
-> *"set up sova from `<repo>`/SETUP.md"*. Your job: wire sova into THIS CLI so the
-> user can start working. Do the adaptation yourself — don't just print steps for
-> the user to run.
+> any MCP-capable CLI). The user got this content to you in one of two ways:
+> - they said *"set up sova from `<repo>`/SETUP.md"* and you read the file, or
+> - they pasted this document's content directly into the chat.
+>
+> Either way, the intent is the same: **wire sova into THIS CLI so the user can
+> start working. Do the adaptation yourself — don't just print steps for the user
+> to run.** If anything is unclear, ask; otherwise proceed.
 >
 > **Why a single intent file (not per-CLI scripts)**: CLIs change their config
 > formats over time. Rather than sova hardcoding each CLI's commands, this file
