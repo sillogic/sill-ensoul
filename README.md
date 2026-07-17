@@ -98,7 +98,7 @@ sova/                         # 仓库根
     init_cmd.py               # sova-init 命令（初始化 KB + 默认 agent + 适配步骤）
   tests/                      # 4 个测试，python run_tests.py 一键跑（自建临时 KB，不依赖 repo）
   WORKFLOW.md                 # CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
-  CLAUDE.md                   # Claude Code 薄壳（权威源，随包发布）
+  SHELL.md                    # CLI 无关薄壳（权威源，随包发布）
   DESIGN.md / ROADMAP.md      # 设计背景 / 进度跟踪
   pyproject.toml              # 包定义（sova-mcp + sova-init 命令）
 ```
