@@ -24,7 +24,7 @@ def main() -> None:
     tests = [
         "tests.test_smoke",        # OKF 纯逻辑
         "tests.test_search",       # H1/H7 检索回归(FTS5 + persona 排除)
-        "tests.test_mcp_live",     # MCP 壳层(12 工具)
+        "tests.test_mcp_live",     # MCP 壳层(14 工具)
         "tests.test_cross_project",  # 跨项目记忆端到端
     ]
     ok = True

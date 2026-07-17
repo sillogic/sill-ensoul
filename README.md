@@ -123,7 +123,7 @@ python run_tests.py
 | `test_mcp_live` | MCP 壳层（14 工具，走真实 stdio） |
 | `test_cross_project` | 跨项目记忆留存（端到端） |
 
-交互测试见 [TEST_SCRIPT.md](TEST_SCRIPT.md)——8 个场景覆盖唤醒/召回/沉淀/skill 调度/跨项目/隔离。
+> 四个测试都自建临时 KB（不依赖 repo 预存数据），clone 后 `python run_tests.py` 直接跑。
 
 ---
 
