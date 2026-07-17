@@ -300,7 +300,14 @@ def append_log(agent_id: str, action: str, detail: str) -> dict:
 
 
 def agent_index(agent_id: str) -> dict:
-    """Progressive-disclosure entry: persona preview + index.md + concept list."""
+    """Progressive-disclosure entry: persona preview + index.md + concept list.
+
+    Raises FileNotFoundError if the agent bundle does not exist, so callers
+    can distinguish "empty agent" from "missing agent" (bug fix).
+    """
+    base = _agent_dir(agent_id)
+    if not base.exists():
+        raise FileNotFoundError(f"agent '{agent_id}' not found")
     persona = _read_persona(agent_id)
     idx_file = _agent_dir(agent_id) / "index.md"
     index_text = idx_file.read_text(encoding="utf-8") if idx_file.exists() else ""
