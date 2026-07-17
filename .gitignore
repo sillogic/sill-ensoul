@@ -1,6 +1,3 @@
-# 私人记忆：绝不上传（用户记忆 bundle，全局 KB 在 %LOCALAPPDATA%/sova）
-knowledge/
-
 # Python 产物
 __pycache__/
 *.py[cod]
