@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "sill-ensoul": {
-      "command": "sill-ensoul-mcp"
+      "command": "python",
+      "args": ["-m", "ensoul.server"]
     }
   }
 }

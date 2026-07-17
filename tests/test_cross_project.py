@@ -66,6 +66,11 @@ async def main():
                     await s.initialize()
                     call = await _tools(s)
 
+                    # 先创建测试 agent,再唤醒
+                    await call("create_agent", agent_id=AGENT,
+                               name="QA Tester",
+                               persona="# 身份\n跨项目 QA 经验沉淀 agent。")
+
                     # 唤醒:agent_index 对一个空 agent 也安全(返回空 persona/concepts)
                     idx = await call("agent_index", agent_id=AGENT)
                     print(f"[A1] 唤醒 {AGENT} -> "
@@ -140,8 +145,8 @@ async def main():
                     for line in body.splitlines()[:6]:
                         print(f"      {line}")
                     # 关键断言:A 项目写的具体经验,B 项目能读到
-                    assert "sleep" in body and "竞态" in body, "❌ 经验细节丢失"
-                    print("\n[B4] ✅ 验证通过:在 A 项目学到的经验,B 项目能检索并读出。")
+                    assert "sleep" in body and "竞态" in body, "[FAIL] 经验细节丢失"
+                    print("\n[B4] [OK] 验证通过:在 A 项目学到的经验,B 项目能检索并读出。")
 
             print("\n" + "=" * 60)
             print("  CROSS-PROJECT GOOD. 记忆是角色作用域,跨项目留存。")

@@ -53,10 +53,10 @@ def main():
                 nonlocal ok_count, fail_count
                 if cond:
                     ok_count += 1
-                    print(f"  ✅ {label}")
+                    print(f"  [OK] {label}")
                 else:
                     fail_count += 1
-                    print(f"  ❌ {label}")
+                    print(f"  [FAIL] {label}")
 
             print("=" * 60)
             print("  H7: persona 不进 concept 清单 / 不进搜索")
@@ -69,6 +69,15 @@ def main():
             hits = okf.search(AGENT, "推荐")
             check("搜'推荐'有结果", len(hits) > 0)
             check("搜'推荐'结果里无 persona", all(h["concept_id"] != "AGENT" for h in hits))
+
+            print("\n" + "=" * 60)
+            print("  agent_index: 不存在的 agent 应报错而非空壳")
+            print("=" * 60)
+            try:
+                okf.agent_index("agent-does-not-exist-fixture")
+                check("不存在 agent 抛 FileNotFoundError", False)
+            except FileNotFoundError as e:
+                check(f"不存在 agent 抛 FileNotFoundError: {e}", True)
 
             print("\n" + "=" * 60)
             print("  H1: FTS5 检索精准命中")

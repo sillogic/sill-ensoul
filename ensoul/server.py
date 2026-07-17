@@ -70,7 +70,10 @@ def agent_index(agent_id: str) -> str:
     """Open an agent's wiki: persona preview, index.md text, and all concepts.
     Call this when waking an agent in a new project, before working.
     Switch agents by calling this with a different agent_id."""
-    return _dump(okf.agent_index(agent_id))
+    try:
+        return _dump(okf.agent_index(agent_id))
+    except FileNotFoundError as e:
+        return _dump({"error": str(e)})
 
 
 @mcp.tool()
