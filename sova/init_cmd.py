@@ -8,9 +8,8 @@ The KB starts empty — each user builds their own agents via wiki_write_concept
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-from .okf import kb_root, _default_kb_root, create_agent
+from .okf import kb_root, create_agent
 
 
 # The thin shell (CLI-agnostic workflow rules). Kept inline so the package
@@ -104,45 +103,9 @@ _DEFAULT_PERSONA = """# 身份
 """
 
 
-def _print_claude_code_steps(kb: Path) -> None:
-    print("## Claude Code setup (3 steps)\n")
-    print("```bash")
-    # 1. Register MCP (user scope, configured once for all projects)
-    print("# 1. Connect Claude Code to sova (user scope, configure once)")
-    print("claude mcp add sova --scope user -- sova-mcp")
-    print()
-    # 2. Install the shell (don't overwrite an existing CLAUDE.md)
-    print("# 2. Install the instruction shell")
-    print("#    WARNING: if ~/.claude/CLAUDE.md already has content, don't overwrite with >!")
-    print("#    Use >> to append, or back up and merge manually. The sova shell is an")
-    print("#    independent rule block and coexists fine when appended.")
-    print("mkdir -p ~/.claude")
-    print("sova-init --print-shell >> ~/.claude/CLAUDE.md   # append, don't overwrite")
-    print()
-    # 3. Verify
-    print("# 3. Open a new Claude Code session and say \"wake up\" to test")
-    print("#    (an empty KB will report no agents — that's normal)")
-    print("```\n")
-
-
-def _print_zcode_steps(kb: Path) -> None:
-    print("## zcode setup (3 steps)\n")
-    print("```bash")
-    print("# 1. Connect zcode to sova (user-level config)")
-    print("#    Edit ~/.zcode/cli/config.json and add:")
-    print('#    {"mcp":{"servers":{"sova":{"command":"sova-mcp"}}}}')
-    print()
-    print("# 2. Install the instruction shell (WARNING: append with >>, don't overwrite)")
-    print("mkdir -p ~/.zcode")
-    print("sova-init --print-shell >> ~/.zcode/AGENTS.md   # append, don't overwrite")
-    print()
-    print("# 3. Restart zcode, open a new session and say \"wake up\" to test")
-    print("```\n")
-
-
 def main() -> None:
     # --print-shell: print only the shell content (for redirecting into
-    # CLAUDE.md/AGENTS.md), no initialization.
+    # a CLI's instruction file), no initialization.
     if "--print-shell" in sys.argv:
         print(_SHELL)
         return
@@ -177,18 +140,24 @@ def main() -> None:
     print()
 
     print("=" * 60)
-    print("  Next: wire up your CLI")
+    print("  Next: wire up your CLI (AI-assisted)")
     print("=" * 60)
     print()
-    print("Which CLI do you use? Follow the matching steps (commands below):")
+    print("CLI adaptation is no longer hardcoded here — it lives in SETUP.md")
+    print("(repo root), a machine-readable adaptation intent. Point your CLI's")
+    print("AI at it and let the CLI wire itself in:")
     print()
-    _print_claude_code_steps(kb)
-    _print_zcode_steps(kb)
+    print('  In your CLI, say: "set up sova from <repo>/SETUP.md"')
     print()
-    print("Tip: `sova-init --print-shell > <CLI instruction file>` exports the shell content.")
+    print("The CLI reads SETUP.md and registers the MCP server + installs the")
+    print("shell itself, using its own current config mechanism. sova stays")
+    print("CLI-agnostic and never tracks each CLI's config changes.")
+    print()
+    print("Manual option: `sova-init --print-shell >> <CLI instruction file>`")
+    print("(append, don't overwrite) + register `sova-mcp` as an MCP server.")
     print()
     print("=" * 60)
-    print("  Done! Open a new session and say \"wake up\" to test.")
+    print('  Done! Restart your CLI, then say "wake up alter-ego" to test.')
     print("=" * 60)
 
 

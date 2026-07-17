@@ -56,27 +56,31 @@
 
 ```bash
 pip install git+https://github.com/<你的用户名>/sova.git
-sova-init              # 初始化 KB + 创建默认 agent alter-ego + 打印各 CLI 适配步骤
+sova-init              # 初始化 KB + 创建默认 agent alter-ego
 ```
 
-`sova-init` 会打印 Claude Code / zcode 的适配命令（注册 MCP + 放薄壳）。
+`sova-init` 只做 CLI 无关的初始化（建 KB + alter-ego）。**CLI 适配**让 CLI 的 AI 自己做——在 CLI 里说 `帮我配置 sova，按 <repo>/SETUP.md 来`，CLI 读 `SETUP.md` 自己注册 MCP + 装薄壳。详见 [SETUP.md](SETUP.md)。
 
 > **首次使用**：装完适配好 CLI 后，新开会话直接说 **`唤醒 alter-ego`**——这是你的数字分身（默认 agent），空记忆，先用它积累经验。攒够某领域经验后再 `create_agent` 分裂出专门 agent。也可以说"唤醒分身"或"wake up alter-ego"，薄壳会识别。
 
 > **想要自己的 agent 名字？** 直接对 CLI 说"帮我建一个叫小索的 agent"，它会调 `create_agent(agent_id="小索", ...)`。之后说 **`唤醒 小索`** 即可——agent_id 就是你起的名字，无需改薄壳、无需重启 CLI。alter-ego 只是开箱即用的默认起点，不是唯一选择。
 
-### 分享给同事（他只装了 Claude Code）
+### 分享给同事（他装了任意 MCP-capable CLI）
 
 发给他这段：
 
 ```bash
 pip install git+https://github.com/<你>/sova.git
-sova-init                                    # 初始化 + 看步骤
-claude mcp add sova --scope user -- sova-mcp
-sova-init --print-shell >> ~/.claude/CLAUDE.md   # 追加薄壳，勿覆盖
+sova-init                          # 初始化 KB + 创建 alter-ego
 ```
 
-装完新开 Claude Code 会话，已有一个默认 agent `alter-ego`（你的数字分身），对它说"唤醒 alter-ego"开始积累。
+然后让他的 CLI 自己完成适配——在 CLI 里说一句：
+
+```
+帮我配置 sova，按 <repo>/SETUP.md 来
+```
+
+CLI 的 AI 会读 `SETUP.md`（适配意图），自己注册 MCP server + 装薄壳。sova 不绑死任何 CLI 的配置方式，CLI 更新了也不用改 sova。适配完重启 CLI，说"唤醒 alter-ego"开始。
 
 ### 从 PyPI 装（发布后）
 
@@ -103,6 +107,7 @@ sova/                         # 仓库根
   tests/                      # 4 个测试，python -m tests.run_tests 一键跑（自建临时 KB，不依赖 repo）
   WORKFLOW.md                 # CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
   SHELL.md                    # CLI 无关薄壳（权威源，随包发布）
+  SETUP.md                    # CLI 适配意图（给 CLI 的 AI 读，让它自己注册 MCP + 装薄壳）
   docs/                       # 深入阅读：DESIGN.md（设计背景）/ ROADMAP.md（进度/决策）
   pyproject.toml              # 包定义（sova-mcp + sova-init 命令）
 ```
