@@ -185,7 +185,7 @@
 
 ## 8. Git 协作纪律（所有 Agent、所有项目通用）
 
-这条规则对**所有 ensouler、所有项目**生效——无论你是 sova-dev / algo-engineer / backend-engineer / alter-ego，只要在 git 仓库里工作就遵守。
+这条规则对**所有 ensouler、所有项目**生效——无论你是 ensoul-dev / algo-engineer / backend-engineer / alter-ego，只要在 git 仓库里工作就遵守。
 
 ### 8.1 Commit message 一律用英文
 

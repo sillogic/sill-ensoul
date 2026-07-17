@@ -54,7 +54,7 @@
 - **决策**:sill-ensoul 的多 agent 协作走**编排者模式**——任何 agent 都能用现有 `wiki_*` 工具(`wiki_write_concept(agent_id=...)` / `wiki_read` / `wiki_search`)操作**其他** agent 的记忆。编排者(人或任一 agent)直接决定写谁的记忆、把结论分发给谁。
 - **废弃的 Phase 2**:原设计的 `registry`(所有权声明)+ `boundary_scan`(冲突检测)+ `comm` 协商 + `boundary_record`(契约)全部删除。它们是为"agent 自治协商边界"设计的,但 sill-ensoul 是"编排者主导"模型,用不上——编排者知道在干什么,不用所有权声明防冲突。
 - **为什么废弃**(三个场景触发反思):
-  1. 场景"让 sova-dev 更新 algo-engineer 记忆" → 现有 `wiki_write_concept(agent_id=...)` 直接能做,不需任何 Phase 2 设施。
+  1. 场景"让 ensoul-dev 更新 algo-engineer 记忆" → 现有 `wiki_write_concept(agent_id=...)` 直接能做,不需任何 Phase 2 设施。
   2. 场景"规划完分发给两个 agent" → 编排者直接 `wiki_write_concept` 到各方记忆即可,不需 comm 消息层。
   3. 场景"唤醒新 agent 交流" → 通过记忆文件"留言"(写 concept 给它/读它的 concept)即可,不需实时对话——agent 本就不是常驻进程。
 - **和 sill-ensoul 哲学一致**:sill-ensoul 是"被唤醒才活、记忆跨项目累积"的角色,不是自主运行实体。"agent 自治协商"和 sill-ensoul 模型有张力(没常驻进程怎么协商?)。编排者模式反而贴合:"编排者用工具操作多 agent 记忆"。
