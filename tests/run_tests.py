@@ -1,7 +1,7 @@
 """One-command test runner for sova.
 
 Usage:
-    python run_tests.py
+    python -m tests.run_tests
 """
 import subprocess
 import sys

@@ -96,7 +96,7 @@ sova/                         # 仓库根
     fts.py                    # SQLite FTS5 全文索引（CJK 按字分词 + BM25）
     server.py                 # FastMCP，把 okf 包成 8 个工具（薄壳，只透传）
     init_cmd.py               # sova-init 命令（初始化 KB + 默认 agent + 适配步骤）
-  tests/                      # 4 个测试，python run_tests.py 一键跑（自建临时 KB，不依赖 repo）
+  tests/                      # 4 个测试，python -m tests.run_tests 一键跑（自建临时 KB，不依赖 repo）
   WORKFLOW.md                 # CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
   SHELL.md                    # CLI 无关薄壳（权威源，随包发布）
   docs/                       # 深入阅读：DESIGN.md（设计背景）/ ROADMAP.md（进度/决策）
@@ -111,7 +111,7 @@ sova/                         # 仓库根
 
 ```bash
 pip install -e .
-python run_tests.py
+python -m tests.run_tests
 ```
 
 四个测试，全绿 = 核心闭环跑通：
@@ -123,7 +123,7 @@ python run_tests.py
 | `test_mcp_live` | MCP 壳层（8 工具，走真实 stdio） |
 | `test_cross_project` | 跨项目记忆留存（端到端） |
 
-> 四个测试都自建临时 KB（不依赖 repo 预存数据），clone 后 `python run_tests.py` 直接跑。
+> 四个测试都自建临时 KB（不依赖 repo 预存数据），clone 后 `python -m tests.run_tests` 直接跑。
 
 ---
 

@@ -1,30 +1,16 @@
-# === 私人记忆：绝不上传 ===
-# knowledge/ 是用户的记忆 bundle（全局 KB 在 %LOCALAPPDATA%/sova）。
-# 每个用户的记忆是私有的，不该进仓库。
+# 私人记忆：绝不上传（用户记忆 bundle，全局 KB 在 %LOCALAPPDATA%/sova）
 knowledge/
 
-# === Python ===
+# Python 产物
 __pycache__/
 *.py[cod]
 *.egg-info/
-*.egg
-build/
-dist/
-.eggs/
 
-# === FTS5 索引（每个环境本地生成）===
+# FTS5 索引（每个环境本地生成）
 **/.fts/
 
-# === Obsidian 本地配置（个人编辑器设置，非项目内容）===
+# Obsidian 本地配置
 .obsidian/
-knowledge/.obsidian/
 
-# === CLI 本地配置（各 CLI 可能创建 .agents/ 等，非项目内容）===
-.agents/
-
-# === 临时/未命名文件 ===
+# 临时文件
 *.tmp
-未命名.base
-
-# === 测试临时产物 ===
-tests/_proj_*/
