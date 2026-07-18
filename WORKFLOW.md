@@ -173,6 +173,7 @@
 - `body` 只写"教训/决策/模式/检查清单"，**绝不存会话原文**。
 - `type` 必填（OKF 规约），常用值：`Project`（项目经验）、`Reference`（通用经验/方法论）、`Playbook`（SOP/检查清单）。
 - `concept_id` 用路径式：`projects/<项目名>` 或 `expertise/<主题>`。
+- **放哪的判断标准见 §4.6**。
 - 写完 `wiki_write_concept` 必须配套 `wiki_append_log`，留下变更痕迹。
 
 > 这种"自动 + 事后告知"是**纯文档驱动**的——没有后台代码监听会话，规则就在本文档里，agent 读到就照做。可靠性来自：① §4.1 触发条件明确可判定；② §4.4 body 只写蒸馏的写入纪律；③ 事后告知 + 用户否决权。
@@ -186,6 +187,36 @@
 1. 回顾本轮对话：是否有非平凡踩坑、关键决策、可复用模式、被纠正的旧认知？
 2. 有 → 立即 `wiki_write_concept` + `wiki_append_log` 补写，并告知用户。
 3. 无 → 不硬写。
+
+### 4.6 经验应该放在哪（projects/ vs expertise/ vs playbook）
+
+`concept_id` 不是装饰，它决定了这条经验未来会被怎么检索、会不会污染其他项目。**写之前先问自己**：
+
+| 问题 | 结论 | 放置位置 | `type` |
+|---|---|---|---|
+| 换一家公司/项目，这条经验还有用吗？ | 通用方法论/模式 | `expertise/<主题>` | `Reference` |
+| 只跟某个具体公司/项目/产品相关？ | 项目专属经验 | `projects/<项目名>` | `Project` |
+| 是个人反复执行的 SOP/checklist？ | 个人操作手册 | `playbook.md` | `Playbook` |
+| 是某个专业角色（算法/后端/管理）的深度领域经验？ | 考虑分裂成专门 agent | 新 agent 的 `expertise/` | `Reference` |
+
+**关键原则**：
+
+- `expertise/` 里的东西必须是**跨项目可复用**的。如果一条经验里频繁出现某个公司名称、某款产品名、某个具体技术栈的细节，而它离开这个上下文就没意义了——那它属于 `projects/<项目名>`。
+- `projects/<项目名>` 不是进度日志，而是**从该项目提炼出的可复用资产**（关键决策、踩坑根因、最终方案）。项目结束后它仍然有价值，但只对回看该项目有价值。
+- `playbook.md` 是最高频复用的检查清单，**只放你反复执行的 SOP**。
+
+**典型反例**：
+
+- ❌ 把"Acme 公司 Redis 迁移踩的 5 个坑"写进 `expertise/redis` —— 离开 Acme 的上下文，很多坑不成立，应该写 `projects/acme-redis-migration`。
+- ❌ 把"sill-ensoul 的 FTS schema 迁移方案"写进 `expertise/fts-migration` —— 它绑定了 sill-ensoul 的具体实现，应写 `projects/sill-ensoul` 或 `expertise/fts-schema-migration` 但 body 里明确标注适用范围。
+- ✅ "CJK 文本在 FTS5 里按字分词的通用方案" —— 不绑定任何项目，放 `expertise/fts-cjk-tokenization`。
+
+**沉淀后的检索影响**：
+
+- 用户问"你做过什么项目" → 从 `agent_index` 筛 `type: Project`，只列出 `projects/` 下的条目。
+- 用户问"你在 X 领域有什么经验" → `wiki_search` 会同时命中 `expertise/` 和 `projects/`，但 `expertise/` 应该是更干净、跨项目可复用的答案。
+
+如果拿不准，**宁可在 `projects/` 里写窄一点**，也不要把项目专属内容泛化进 `expertise/` 污染全局检索。
 
 **如果用户主动问"你最近怎么没沉淀""为什么没问我要不要沉淀"**，这是明确的信号：沉淀规则可能已被跳过。立即把本轮相关发现补写入 wiki，不要等用户逐条提醒。
 

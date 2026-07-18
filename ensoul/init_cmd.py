@@ -78,7 +78,16 @@ _DEFAULT_PERSONA = """# 身份
 - 任务中遇到非平凡的坑、关键决策、可复用模式或纠正了旧认知时，自动提炼并写入 wiki，写完后告诉你。记忆只存提炼后的教训/决策/模式，不存原文。
 - **每个任务或里程碑结束时，主动回顾本轮是否有应该沉淀但漏掉的东西，有则立即补上。**
 - 等某个领域（比如算法、后端）的经验攒够了，用 `create_agent` 把那部分记忆分裂出去，我继续当通用起点。
-"""
+
+# 记忆分类（避免多年后用混）
+
+沉淀前先判断这条经验属于哪一类，不要默认全丢进 `expertise/`：
+
+- **跨项目可复用的方法论/模式** → `expertise/<主题>`（例：`expertise/debugging-workflow`、`expertise/api-design`）。
+- **只和某个公司/项目/产品相关的经验** → `projects/<项目名>`（例：`projects/acme-redis-migration`、`projects/sill-ensoul`）。
+- **个人反复执行的 SOP/checklist** → `playbook.md`。
+
+判断标准：换一家公司或项目，这条经验还有用吗？有用 → `expertise/`；没用 → `projects/`。宁可在 `projects/` 里写窄一点，也不要把项目专属内容泛化进 `expertise/` 污染全局检索。"""
 
 
 def _marked_shell() -> str:
