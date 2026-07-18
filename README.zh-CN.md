@@ -18,7 +18,7 @@
 - **agent 记忆隔离**：建多个 ensouler（算法工程师、后端、测试、UI……），各自独立记忆 bundle，互不污染。唤醒谁，就用谁的经验。
 - **记忆即文件**：纯 markdown（遵循 [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)），可 git、可 diff、用 Obsidian 直接读改。向量库只是索引，md 永远是 source of truth。
 - **零外部依赖**：SQLite FTS5 全文检索（CJK 按字分词 + BM25），无需 OpenAI key、无需 Docker、无需云服务。模型供应商无关——推理始终在你的 CLI 里。
-- **主动沉淀**：agent 在任务中踩了非平凡的坑、做了可复用的决策，会**主动提醒你**"这条值得记进 wiki"，你确认才写入——既不靠你自律去记，也不往记忆里灌垃圾。
+- **主动沉淀**：agent 在任务中踩了非平凡的坑、做了可复用的决策，会**直接提炼并写入 wiki，写完告诉你**（concept_id + 一句话要点）——既不靠你自律去记，你也有事后否决权（可让它删/改）。
 
 ---
 
@@ -83,7 +83,7 @@ sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
 - **薄壳层**（`AGENTS.md` / `CLAUDE.md`）— 每 CLI 一份，定义"何时唤醒/检索/沉淀"，引用共享的 [WORKFLOW.md](WORKFLOW.md)。
 - **记忆本体**（`knowledge/agents/<id>/`）— OKF markdown 文件，可 git、可 diff、人可读。
 
-核心循环：**唤醒**（加载 persona + 知识地图）→ **召回**（检索相关经验）→ **引用**（带 concept_id 引用真实记忆）→ **沉淀**（提炼新经验，你确认才写入）→ 跨项目/会话留存。
+核心循环：**唤醒**（加载 persona + 知识地图）→ **召回**（检索相关经验）→ **引用**（带 concept_id 引用真实记忆）→ **沉淀**（提炼新经验，直接写入并告知）→ 跨项目/会话留存。
 
 ---
 
@@ -126,7 +126,7 @@ python -m tests.run_tests
 - ✅ 核心闭环跑通：唤醒 → 召回 → 引用 → 沉淀 → 跨项目留存
 - ✅ 可安装：`pip install` + `sill-ensoul-init` 自举适配各 CLI
 - ✅ 跨 CLI 验证：zcode + Claude Code 均适配成功
-- ✅ 设计定案：提醒式半自动蒸馏是**终态设计**（不是全自动的过渡态）；多 agent 协作走编排者模式（D6）
+- ✅ 设计定案：自动沉淀 + 写后告知（非写前确认，也非全自动）；多 agent 协作走编排者模式（D6）
 - 详见 [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---

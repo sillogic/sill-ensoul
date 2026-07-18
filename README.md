@@ -18,7 +18,7 @@ Give your CLI agents experience that doesn't vanish when you switch projects, sw
 - **Agent isolation**: spin up multiple ensoulers (algorithm engineer, backend, testing, UI...) — each has its own memory bundle, no cross-contamination. Wake one, work with its experience.
 - **Memory is files**: plain markdown (following [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) — git-able, diff-able, editable in Obsidian. Vector stores are just an index; md is always source of truth.
 - **Zero external deps**: SQLite FTS5 full-text search (CJK char segmentation + BM25) — no OpenAI key, no Docker, no cloud service. Model-vendor-agnostic: inference always stays in your CLI.
-- **Proactive distillation**: when an agent hits a non-trivial pitfall or makes a reusable decision, it **proactively reminds you** "this is worth saving to the wiki" — you confirm before it writes. So you don't have to remember to write things down, and nothing lands in memory without your say-so.
+- **Proactive distillation**: when an agent hits a non-trivial pitfall or makes a reusable decision, it **distills and writes it directly, then tells you what it wrote** (concept_id + one-line gist). You don't have to remember to write things down, and you keep after-the-fact veto (ask it to delete/edit).
 
 ---
 
@@ -83,7 +83,7 @@ Set `ENSOUL_KB=<path>` to put it anywhere (e.g. a Dropbox / iCloud folder for mu
 - **Shell** (`AGENTS.md` / `CLAUDE.md`) — one per CLI, defines "when to wake/search/distill", references the shared [WORKFLOW.md](WORKFLOW.md).
 - **Memory** (`knowledge/agents/<id>/`) — OKF markdown files, git-able, diff-able, human-readable.
 
-Core loop: **wake** (load persona + knowledge map) → **recall** (search relevant experience) → **cite** (reference real memory with concept_id) → **distill** (new experience, written only after you confirm). Memory persists across projects and sessions.
+Core loop: **wake** (load persona + knowledge map) → **recall** (search relevant experience) → **cite** (reference real memory with concept_id) → **distill** (new experience, written directly with a heads-up). Memory persists across projects and sessions.
 
 ---
 
@@ -126,7 +126,7 @@ Three release tests, all green = core loop works (each builds its own temp KB, r
 - ✅ Core loop works: wake → recall → cite → distill → cross-project retention
 - ✅ Installable: `pip install` + `sill-ensoul-init` self-boots CLI setup
 - ✅ Cross-CLI verified: zcode + Claude Code both adapted
-- ✅ Design final: reminder-style semi-auto distillation is the intended design (not a placeholder for full-auto). Multi-agent collaboration via orchestrator model (D6).
+- ✅ Design final: auto-distill + notify-after (not pre-write confirmation, not full-auto). Multi-agent collaboration via orchestrator model (D6).
 - See [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---
