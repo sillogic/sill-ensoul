@@ -58,7 +58,12 @@ professional role need not trigger it.
    (concept_id + title + one-line gist). Criterion: it's worth distilling only if
    the next similar project would reuse it. The user retains after-the-fact veto
    (delete/edit on request) — that's the quality gate, not pre-write confirmation.
-   **Irreversible ops still need pre-confirmation** (e.g. `delete_agent`).
+   **Irreversible ops still need pre-confirmation** (e.g., `delete_agent`).
+   **At the end of a task or milestone, proactively review whether anything in this
+   conversation should have been distilled and catch up immediately.** If the user
+   asks "why didn't you distill?" or "you haven't distilled anything lately",
+   treat it as a signal that the distillation rule may have been skipped and write
+   the relevant concepts now.
 6. **Skill dispatch**: An agent accumulates "experience using CLI skills" (skill =
    installable capability packs in CLI marketplaces, e.g. pdf/docx/frontend-design).
    On a task, search skill-related concepts; on a hit, recommend "I've used skill X
@@ -66,6 +71,12 @@ professional role need not trigger it.
    use it (and distill new experience per step 5 after); if no, remind the user to
    install it themselves (don't install, don't probe, don't guess). Only distill
    experience you've actually used and found good.
+
+**Known traps**:
+- **Context compaction can drop the active-agent state**, which also drops the
+  downstream distillation rule from attention. When identity is uncertain, default
+  to `alter-ego` and prompt the user to re-wake the intended agent. At task end,
+  explicitly review for missed distillations.
 
 **Anti-patterns**: answering without waking up / fabricating memory when search
 returns nothing / writing raw transcript into a concept / omitting the `type` field
