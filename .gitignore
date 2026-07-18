@@ -19,3 +19,6 @@ shared/
 
 # 临时文件
 *.tmp
+
+# 竞品分析/调研报告（本地参考，不进仓库）
+docs/openclaw-vs-hermes-report.md
