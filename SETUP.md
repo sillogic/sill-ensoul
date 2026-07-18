@@ -81,8 +81,8 @@ the CLI's config dir, or a `.mcp.json` at project root. Use whatever is current.
 - **Shell content**: the output of `sill-ensoul-init --print-shell` (also stored as
   `ensoul/SHELL.md` in the package). It's CLI-agnostic workflow rules for the LLM.
 - **Target file**: wherever THIS CLI reads its system instructions from
-  (e.g. `~/.claude/CLAUDE.md`, `~/.zcode/AGENTS.md`, a Codex skill, etc.).
-  You know where your own CLI's instruction file is.
+  (e.g. `~/.claude/CLAUDE.md`, `~/.zcode/AGENTS.md`, `~/.codex/AGENTS.md`,
+  `~/.config/opencode/AGENTS.md`). You know where your own CLI's instruction file is.
 - **CRITICAL — append, don't overwrite**: if the target file already has content,
   APPEND the ensouler shell (use `>>` or insert at end), never `>` overwrite. The
   sill-ensoul shell is an independent rule block and coexists with existing instructions.
