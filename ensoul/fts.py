@@ -25,6 +25,11 @@ import re
 import threading
 from pathlib import Path
 
+# Schema version for the index.db file. Increment when the FTS or meta schema
+# changes. _connect() checks PRAGMA user_version and rebuilds tables when stale,
+# so upgrades don't leave old indexes with missing columns.
+_SCHEMA_VERSION = 1
+
 # FTS5 virtual table. unicode61: splits on non-alphanumeric; for CJK each char
 # becomes a token (no word segmenter needed). remove_diacritics=2 normalizes
 # accents. We index title/desc/tags/body as separate columns so bm25 can weight
@@ -104,6 +109,19 @@ def _connect(agent_dir: Path) -> sqlite3.Connection:
     conn.executescript(_FTS_SCHEMA)
     conn.executescript(_META_SCHEMA)
     conn.commit()
+
+    # Schema migration: if the on-disk schema version is older than the code's,
+    # drop and recreate tables. The index will be rebuilt from .md files on the
+    # next sync. This avoids "no such column" errors after upgrading.
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    if version != _SCHEMA_VERSION:
+        conn.execute("DROP TABLE IF EXISTS meta")
+        conn.execute("DROP TABLE IF EXISTS concepts")
+        conn.executescript(_FTS_SCHEMA)
+        conn.executescript(_META_SCHEMA)
+        conn.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
+        conn.commit()
+
     with _cache_lock:
         _conn_cache[key] = conn
     return conn
