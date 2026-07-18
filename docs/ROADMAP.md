@@ -79,6 +79,30 @@
 - **与项目哲学一致**：agent 是"被唤醒才活、记忆跨项目累积"的角色，不是自主运行实体。"agent 自治协商"和这个模型有张力（没常驻进程怎么协商？）。编排者模式反而贴合："编排者用工具操作多 agent 记忆"。
 - **状态**：✅ 已落地。`registry.py`/`comm.py`/`test_phase2.py` 已删，server.py 的 6 个 Phase 2 工具已移除。工具数 14→8。
 
+### D7 — 无 per-agent `workflow/` 文件夹；全局 `WORKFLOW.md` 是唯一工作流权威源
+
+- **决策**：**不在每个 agent bundle 内建 `workflow/` 文件夹**。所有 agent 共享一份全局 `WORKFLOW.md`，定义"何时唤醒/检索/引用/沉淀/skill 调度"等 CLI 无关规则。各 CLI 的薄壳（`AGENTS.md` / `CLAUDE.md`）只引用它，不内联。
+- **为什么否决 per-agent workflow**：
+  1. **违反单一真相源**。工作流是"所有 ensouler 通用的协作协议"，不是某个 agent 的私有记忆。一旦每个 agent 都有 workflow 副本，改一条通用规则要改 N 处，必然漂移。
+  2. **与 D2 三层分离冲突**。workflow 属于 (b) 层（CLI 无关、只写一次），把它拆进每个 agent bundle 等于把 (b) 层混进 (c)/记忆层。
+  3. **与 OKF  bundle 自包含哲学冲突**。agent bundle 应该只装"这个角色知道什么"（经验、项目、playbook），不该装"系统怎么运转"的元规则。
+- **如果某个 agent 真的需要专属流程怎么办**：把它写成普通 OKF concept，type 用 `Playbook`（OKF SPEC 4.1 示例类型之一），放在 `playbooks/<name>.md`。这既是 agent 的私有经验，又完全合规，还能被检索。例如 `playbooks/code-review.md`。
+- **状态**：✅ 已决策，不添加 per-agent workflow 文件夹。
+
+### D8 — OKF 合规性：bundle 内 extra markdown 文件是否可接受
+
+经对照 [OKF SPEC](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 审查：
+
+| 文件 | OKF 定位 | 我们的处理 | 结论 |
+|---|---|---|---|
+| `index.md` | 保留文件名（SPEC 3.1），目录清单 | 每个 agent 创建，无 frontmatter，用于知识地图 | ✅ 完全合规 |
+| `log.md` | 保留文件名（SPEC 3.1），变更历史 | 每个 agent 创建，按日期分组追加 | ✅ 完全合规 |
+| `AGENT.md` | 非保留文件名 → SPEC 3.1 规定"其余 `.md` 都是 concept 文档" | 我们把它作为 `type: Profile` 的 concept，但引擎额外按文件名排除在搜索/concept 清单外（H7），只通过 `agent_index()` 暴露 persona | ✅ 合规：OKF 允许 producer-defined type 与扩展 key；`Profile` 是有效的自定义类型。排除它是引擎实现细节，不影响文件格式合规。 |
+| `.fts/index.db` | 非 markdown，OKF 未涉及 | SQLite FTS5 派生索引，`.md` 是唯一权威源 | ✅ 不影响 OKF 合规 |
+
+- **关键引述**：OKF SPEC 3.1 只保留 `index.md` / `log.md`；4.1 明确"Producers MAY include any additional keys"，消费者"MUST tolerate unknown types gracefully"。因此 `AGENT.md` 作为带 `type: Profile` 的 concept 是合法扩展。
+- **状态**：✅ 已确认合规，无需重构文件结构。
+
 ---
 
 ## 3. 问题清单
