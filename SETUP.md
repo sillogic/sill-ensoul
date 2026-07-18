@@ -79,7 +79,7 @@ the CLI's config dir, or a `.mcp.json` at project root. Use whatever is current.
 ### 2. The sill-ensoul shell is installed into this CLI's instruction file
 
 - **Shell content**: the output of `sill-ensoul-init --print-shell` (also stored as
-  `SHELL.md` in the repo root). It's CLI-agnostic workflow rules for the LLM.
+  `ensoul/SHELL.md` in the package). It's CLI-agnostic workflow rules for the LLM.
 - **Target file**: wherever THIS CLI reads its system instructions from
   (e.g. `~/.claude/CLAUDE.md`, `~/.zcode/AGENTS.md`, a Codex skill, etc.).
   You know where your own CLI's instruction file is.
