@@ -137,7 +137,7 @@ python -m tests.run_tests
 ## 深入阅读
 
 - [docs/DESIGN.md](docs/DESIGN.md) — 设计背景：为什么 OKF、为什么 MCP、与 mem0/letta/graphiti 的对比
-- [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D6 + 历史踩坑 H1-H12
+- [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D8 + 历史踩坑 H1-H12
 - [WORKFLOW.md](WORKFLOW.md) — CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
 - [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读）
 
