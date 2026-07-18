@@ -11,6 +11,7 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
+from typing import TypedDict
 
 from .okf import kb_root, create_agent
 
@@ -89,10 +90,15 @@ _SHELL_START_MARKER = "<!-- SILL-ENSOUL-SHELL-START -->"
 _SHELL_END_MARKER = "<!-- SILL-ENSOUL-SHELL-END -->"
 
 
+class _CLITarget(TypedDict):
+    name: str
+    path: Path
+
+
 # Supported CLI instruction files. Paths are inside the user's home directory and
 # are therefore outside the repo — git cannot sync them. --sync-shell exists to
 # bridge this gap.
-_CLI_TARGETS: list[dict[str, object]] = [
+_CLI_TARGETS: list[_CLITarget] = [
     {
         "name": "Claude Code",
         "path": Path.home() / ".claude" / "CLAUDE.md",
@@ -134,14 +140,22 @@ def _update_shell_file(path: Path, name: str) -> str:
         return "missing"
 
     content = path.read_text(encoding="utf-8")
-    if _SHELL_START_MARKER not in content or _SHELL_END_MARKER not in content:
+    has_start = _SHELL_START_MARKER in content
+    has_end = _SHELL_END_MARKER in content
+    if not has_start and not has_end:
         return "unmarked"
-
-    backup = path.with_suffix(path.suffix + ".sill-ensoul.bak")
-    shutil.copy2(path, backup)
+    if has_start != has_end:
+        return "malformed"
 
     start_idx = content.find(_SHELL_START_MARKER)
-    end_idx = content.find(_SHELL_END_MARKER) + len(_SHELL_END_MARKER)
+    end_idx = content.find(_SHELL_END_MARKER)
+    if start_idx > end_idx:
+        return "malformed"
+    end_idx += len(_SHELL_END_MARKER)
+
+    backup = path.parent / (path.name + ".sill-ensoul.bak")
+    shutil.copy2(path, backup)
+
     new_content = content[:start_idx] + _marked_shell() + content[end_idx:]
     path.write_text(new_content, encoding="utf-8")
     return "updated"
@@ -154,28 +168,35 @@ def sync_shell() -> int:
     print()
 
     any_updated = False
+    any_attention = False
     for target in _CLI_TARGETS:
-        path = Path(target["path"])
-        status = _update_shell_file(path, str(target["name"]))
+        path = target["path"]
+        status = _update_shell_file(path, target["name"])
         labels = {
             "updated": "updated",
             "missing": "missing",
             "unmarked": "unmarked (no markers; append manually or re-init)",
+            "malformed": "malformed markers (manual fix needed)",
         }
         print(f"  [{labels[status]}] {target['name']}: {path}")
         if status == "updated":
             any_updated = True
+        if status in ("unmarked", "malformed"):
+            any_attention = True
 
     print()
     if any_updated:
         print("Restart your CLI for the updated shell to take effect.")
         print("Backups were written next to each updated file with suffix")
         print("`.sill-ensoul.bak`.")
+    elif any_attention:
+        print("Some files need manual attention (see statuses above).")
+        print("Bootstrap a fresh shell with: sill-ensoul-init --print-shell >> <file>")
     else:
-        print("No supported CLI instruction files were found with sill-ensoul markers.")
+        print("No supported CLI instruction files were found.")
         print("Bootstrap manually with: sill-ensoul-init --print-shell >> <file>")
     print()
-    return 0 if any_updated else 1
+    return 0
 
 
 def init_kb() -> int:

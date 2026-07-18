@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 from datetime import date, datetime
 
+import yaml
 from mcp.server.fastmcp import FastMCP
 
 from . import okf
@@ -97,7 +98,10 @@ def wiki_write_concept(agent_id: str, concept_id: str, type: str,
                        tags: list[str] | None = None, extra_json: str = "") -> str:
     """Create or update a concept file in an agent's wiki. 'type' is required (OKF).
     extra_json: optional JSON object string for custom frontmatter fields."""
-    extra = json.loads(extra_json) if extra_json else None
+    try:
+        extra = json.loads(extra_json) if extra_json else None
+    except json.JSONDecodeError as e:
+        return _dump({"error": f"invalid extra_json: {e}"})
     try:
         return _dump(okf.write_concept(
             agent_id, concept_id, type, title or None, description or None,
@@ -109,7 +113,10 @@ def wiki_write_concept(agent_id: str, concept_id: str, type: str,
 @mcp.tool()
 def wiki_append_log(agent_id: str, action: str, detail: str) -> str:
     """Append one update entry to the agent's log.md (today's date group)."""
-    return _dump(okf.append_log(agent_id, action, detail))
+    try:
+        return _dump(okf.append_log(agent_id, action, detail))
+    except FileNotFoundError as e:
+        return _dump({"error": str(e)})
 
 
 def main() -> None:

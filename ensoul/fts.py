@@ -41,7 +41,7 @@ _FTS_SCHEMA = """CREATE VIRTUAL TABLE IF NOT EXISTS concepts USING fts5(
 # space-separate every Han character before indexing. Then "双塔模型" is stored
 # as tokens [双, 塔, 模, 型], and the phrase "双塔" matches the adjacent pair.
 # ASCII/Latin runs are left intact so English word matching still works.
-_CJK = re.compile(r"[\u4e00-\u9fff]")
+_CJK = re.compile(r"[一-鿿]")
 
 
 def _segment_for_index(text: str) -> str:
@@ -50,7 +50,7 @@ def _segment_for_index(text: str) -> str:
     if not text:
         return ""
     out = []
-    for tok in re.findall(r"[\u4e00-\u9fff]+|[^\u4e00-\u9fff]+", text):
+    for tok in re.findall(r"[一-鿿]+|[^一-鿿]+", text):
         if _CJK.match(tok[0]):
             out.append(" ".join(tok))  # CJK run -> per-char tokens
         else:
@@ -66,6 +66,10 @@ _META_SCHEMA = """CREATE TABLE IF NOT EXISTS meta(
 # shareable across threads by default; we keep one per (agent_dir, thread).
 _conn_cache: dict[tuple[str, int], sqlite3.Connection] = {}
 _cache_lock = threading.Lock()
+
+
+class FTSQueryError(Exception):
+    """Raised when a query cannot be executed by FTS5 (e.g. malformed MATCH)."""
 
 
 def _db_path(agent_dir: Path) -> Path:
@@ -150,7 +154,7 @@ def sync_index(agent_dir: Path, concepts: list[dict]) -> None:
 def _phrase_terms(query: str) -> list[str]:
     """Build FTS5 phrase-prefix terms, applying the SAME CJK per-char
     segmentation used at index time (see _segment_for_index). So query "双塔"
-    becomes the phrase '"双 塔"'*, matching the adjacent index tokens 双,塔.
+    becomes the phrase '"双 塔"'*', matching the adjacent index tokens 双,塔.
     Latin tokens stay whole with prefix matching ('rank'* -> 'ranking')."""
     query = query.replace('"', "").replace("*", "")
     terms = []
@@ -168,20 +172,30 @@ def _run(conn: sqlite3.Connection, match_expr: str, limit: int) -> list[sqlite3.
            "FROM concepts WHERE concepts MATCH ? ORDER BY rank LIMIT ?")
     try:
         return conn.execute(sql, (match_expr, limit)).fetchall()
-    except sqlite3.OperationalError:
-        return []  # malformed MATCH (e.g. pure punctuation)
+    except sqlite3.OperationalError as e:
+        msg = str(e).lower()
+        # Common benign case: pure punctuation or otherwise unparseable query.
+        if "malformed" in msg or "syntax" in msg:
+            raise FTSQueryError(str(e)) from e
+        raise
 
 
 def search(agent_dir: Path, query: str, limit: int = 5) -> list[dict]:
     """BM25-ranked FTS5 search. Each whitespace token becomes a phrase-prefix
     term (CJK segmented per-char to match index time). Multi-token queries OR
-    the phrases. Higher score = more relevant (bm25 negated)."""
+    the phrases. Higher score = more relevant (bm25 negated).
+
+    Returns an empty list for malformed queries instead of crashing."""
     terms = _phrase_terms(query)
     if not terms:
         return []
     conn = _connect(agent_dir)
     out = []
-    for r in _run(conn, " OR ".join(terms), limit):
+    try:
+        rows = _run(conn, " OR ".join(terms), limit)
+    except FTSQueryError:
+        return []
+    for r in rows:
         out.append({
             "concept_id": r["concept_id"],
             "title": r["title"],

@@ -133,8 +133,9 @@ first.
 **Going further** (no need to read docs):
 - Want your own agent name? Tell me "create an agent called <name>", then say
   `唤醒 <name>`.
-- After a while I'll proactively remind you when something is worth saving to
-  memory — you confirm, I write it.
+- After a while I'll automatically distill reusable experience into your wiki
+  and tell you what I wrote (concept_id + one-line gist). You can always ask me
+  to delete or edit it afterward.
 - To read/edit your memory directly, open the KB in Obsidian:
   - Windows: `%LOCALAPPDATA%\ensoul\knowledge`
   - macOS: `~/Library/Application Support/ensoul/knowledge`

@@ -5,8 +5,11 @@
 
 用法:  python -m tests.test_search
 """
+import os
 import shutil
 import tempfile
+
+import yaml
 
 from ensoul import okf, fts
 
@@ -35,11 +38,36 @@ def setup_agent(kb_root):
     # 注意:demo-project 文档故意不含"过拟合",避免与 overfitting 文档构成平局干扰断言
 
 
+def test_frontmatter_error_handling(check, kb_root):
+    """坏 frontmatter 应该被感知,而不是静默返回空 dict。"""
+    bad_path = kb_root / "agents" / AGENT / "expertise" / "bad-frontmatter.md"
+    bad_path.parent.mkdir(parents=True, exist_ok=True)
+    bad_path.write_text("---\nthis is: not: valid: yaml:\n---\nbody", encoding="utf-8")
+
+    try:
+        okf.read_concept(AGENT, "expertise/bad-frontmatter")
+        check("坏 frontmatter 读时抛错", False)
+    except yaml.YAMLError:
+        check("坏 frontmatter 读时抛 yaml.YAMLError", True)
+
+    # 搜索时应跳过坏文件而不是崩溃
+    hits = okf.search(AGENT, "body")
+    check("搜索跳过坏 frontmatter 文件", all(h["concept_id"] != "expertise/bad-frontmatter" for h in hits))
+
+
+def test_delete_agent_path_escape(check, kb_root):
+    """delete_agent 必须拒绝逃出 agents 目录的路径。"""
+    try:
+        okf.delete_agent("../../etc")
+        check("delete_agent 拒绝 escape", False)
+    except ValueError as e:
+        check(f"delete_agent 拒绝 escape: {e}", "invalid agent_id" in str(e))
+
+
 def main():
     fts.reset_cache_for_tests()
     # 临时 KB,完全隔离
     with tempfile.TemporaryDirectory() as tmp:
-        import os
         os.environ["ENSOUL_KB"] = tmp
         kb = okf.kb_root()
         try:
@@ -97,6 +125,8 @@ def main():
             # 英文前缀匹配
             check("搜'rank' -> overfitting(含rank)",
                   top("rank") == "expertise/overfitting")
+            # 纯标点查询不崩溃
+            check("搜'!@#' 返回空", okf.search(AGENT, "!@#") == [])
 
             print("\n" + "=" * 60)
             print("  H1: 增量索引一致(写后立刻可搜)")
@@ -107,6 +137,12 @@ def main():
             fts.reset_cache_for_tests()  # 新进程模拟
             h = okf.search(AGENT, "unique-token-xyz")
             check("写后立即搜得到", len(h) == 1 and h[0]["concept_id"] == "projects/new")
+
+            print("\n" + "=" * 60)
+            print("  错误处理: frontmatter 损坏 / delete_agent 逃逸")
+            print("=" * 60)
+            test_frontmatter_error_handling(check, kb)
+            test_delete_agent_path_escape(check, kb)
 
             print("\n" + "=" * 50)
             if fail_count == 0:

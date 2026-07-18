@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -46,9 +47,7 @@ def _default_kb_root() -> Path:
         xdg = os.environ.get("XDG_DATA_HOME")
         if xdg:
             return Path(xdg) / "ensoul" / "knowledge"
-        xdg_default = Path.home() / ".local" / "share"
-        if xdg_default.exists() or True:  # XDG spec default
-            return xdg_default / "ensoul" / "knowledge"
+        return Path.home() / ".local" / "share" / "ensoul" / "knowledge"
     return Path.home() / ".ensoul" / "knowledge"
 
 
@@ -70,16 +69,18 @@ def _agent_dir(agent_id: str) -> Path:
 
 
 def parse_markdown(text: str) -> tuple[dict, str]:
-    """Split a concept file into (frontmatter dict, body string)."""
+    """Split a concept file into (frontmatter dict, body string).
+
+    If the file has no frontmatter, returns ({}, text). If frontmatter exists
+    but is not valid YAML, raises yaml.YAMLError so the caller can surface the
+    problem instead of silently working with an empty dict.
+    """
     m = _FRONTMATTER_RE.match(text)
     if not m:
         return ({}, text)
-    try:
-        fm = yaml.safe_load(m.group(1)) or {}
-        if not isinstance(fm, dict):
-            fm = {}
-    except yaml.YAMLError:
-        fm = {}
+    fm = yaml.safe_load(m.group(1)) or {}
+    if not isinstance(fm, dict):
+        raise yaml.YAMLError("OKF frontmatter must be a YAML mapping")
     return (fm, m.group(2))
 
 
@@ -87,6 +88,26 @@ def serialize(frontmatter: dict, body: str) -> str:
     fm = {k: v for k, v in frontmatter.items() if v is not None}
     head = yaml.safe_dump(fm, allow_unicode=True, sort_keys=False).strip()
     return f"---\n{head}\n---\n\n{body.strip()}\n"
+
+
+def _atomic_write_text(path: Path, text: str, encoding: str = "utf-8") -> None:
+    """Write text to path atomically: create a temp file in the same directory,
+    then os.replace() it into place. This prevents half-written files on crash.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=f".{path.name}.tmp_", suffix=".md"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding=encoding, newline="") as f:
+            f.write(text)
+        os.replace(tmp_name, path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 def list_agents() -> list[dict]:
@@ -118,23 +139,24 @@ def create_agent(agent_id: str, name: str | None = None,
     persona_body = persona or (
         f"# 身份\n\n我是 {display}。强项：\n\n- （待补充）\n\n# 工作方式\n\n"
         "进新项目时，先读自己的 index.md 和最相关的经验条目，带着历史项目的"
-        "教训开工。做完里程碑，把可复用的经验提炼进 wiki，原文不进记忆。")
+        "教训开工。任务中遇到非平凡的坑、关键决策、可复用模式或纠正了旧认知时，"
+        "自动提炼并写入 wiki，写完后告诉你。原文不进记忆。")
     agent_md = serialize(
         {"type": "Profile", "title": display,
          "description": f"{display} Agent"},
         persona_body)
-    (d / "AGENT.md").write_text(agent_md, encoding="utf-8")
+    _atomic_write_text(d / "AGENT.md", agent_md)
 
     # index.md — knowledge map (OKF reserved file, no frontmatter)
-    (d / "index.md").write_text(
+    _atomic_write_text(
+        d / "index.md",
         f"# {display} · 知识地图\n\n"
         "# 核心文件\n* [Playbook](playbook.md) - SOP 和检查清单（最高频复用）\n\n"
         "# 通用经验\n* [expertise](expertise/) - 跨项目沉淀的方法论\n\n"
-        "# 项目经验\n* [projects](projects/) - 每个历史项目的提炼后经验\n",
-        encoding="utf-8")
+        "# 项目经验\n* [projects](projects/) - 每个历史项目的提炼后经验\n")
 
     # log.md — update history (OKF reserved file)
-    (d / "log.md").write_text("# Directory Update Log\n", encoding="utf-8")
+    _atomic_write_text(d / "log.md", "# Directory Update Log\n")
 
     return {"agent_id": agent_id, "name": display,
             "created": [str(p.name) for p in sorted(d.iterdir())]}
@@ -204,6 +226,11 @@ def search(agent_id: str, query: str, limit: int = 5) -> list[dict]:
     before each query, so it is always consistent with the bundle. Persona
     (AGENT.md) and OKF reserved files are excluded (H7). Falls back to nothing
     (empty results) if FTS5 is unavailable.
+
+    NOTE: this implementation reads every concept file on every query to build
+    the in-memory lookup used for snippet/title enrichment. For bundles with
+    hundreds of concepts this is fine; for thousands, consider caching parsed
+    frontmatter or reading only the hit concepts.
     """
     base = _agent_dir(agent_id)
     if not base.exists():
@@ -213,7 +240,15 @@ def search(agent_id: str, query: str, limit: int = 5) -> list[dict]:
     by_cid: dict[str, dict] = {}
     for p in _iter_concepts(agent_id):
         rel = p.relative_to(base).with_suffix("").as_posix()
-        fm, body = parse_markdown(p.read_text(encoding="utf-8"))
+        try:
+            fm, body = parse_markdown(p.read_text(encoding="utf-8"))
+        except yaml.YAMLError as e:
+            # A concept with malformed frontmatter breaks search for the whole
+            # bundle. Skip it but surface the problem via stderr so the user can
+            # fix the file. read_concept() will still raise when called directly.
+            import warnings
+            warnings.warn(f"skipping malformed OKF frontmatter in {p}: {e}")
+            continue
         tags = fm.get("tags") or []
         doc = {
             "concept_id": rel,
@@ -256,7 +291,8 @@ def write_concept(agent_id: str, concept_id: str, type: str,
                   title: str | None = None, description: str | None = None,
                   body: str = "", tags: list[str] | None = None,
                   extra: dict | None = None) -> dict:
-    """Create or update a concept file. 'type' is required by OKF."""
+    """Create or update a concept file. 'type' is required by OKF.
+    Writes atomically so a crash mid-write never leaves a half-written file."""
     if not type:
         raise ValueError("OKF requires a 'type' field")
     if ".." in concept_id.split("/"):
@@ -276,13 +312,14 @@ def write_concept(agent_id: str, concept_id: str, type: str,
         fm.update(extra)
 
     f = _agent_dir(agent_id) / f"{concept_id}.md"
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(serialize(fm, body), encoding="utf-8")
+    _atomic_write_text(f, serialize(fm, body))
     return read_concept(agent_id, concept_id)
 
 
 def append_log(agent_id: str, action: str, detail: str) -> dict:
-    """Append one entry to the agent's log.md under today's ISO date group."""
+    """Append one entry to the agent's log.md under today's ISO date group.
+    Uses atomic read-modify-write so concurrent callers are less likely to
+    corrupt the file (ROADMAP #11)."""
     f = _agent_dir(agent_id) / "log.md"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     entry = f"* **{action}**: {detail}"
@@ -295,7 +332,7 @@ def append_log(agent_id: str, action: str, detail: str) -> dict:
     else:
         text = text.replace("# Directory Update Log\n",
                             f"# Directory Update Log\n\n{marker}\n{entry}\n", 1)
-    f.write_text(text, encoding="utf-8")
+    _atomic_write_text(f, text)
     return {"agent_id": agent_id, "date": today, "entry": entry}
 
 
