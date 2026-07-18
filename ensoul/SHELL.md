@@ -29,10 +29,20 @@ professional role need not trigger it.
    **Self-awareness**: If the user asks "who are you / what can you do / what have
    you done", answer directly from the **currently active** agent's persona + concept
    list — don't fabricate. If you are unsure which agent is active (e.g., after
-   context compaction), **do not infer the active agent from the conversation topic**.
-   Default to `alter-ego` and add a brief note: "If you meant to speak as another
-   agent, say 'wake up <agent_id>'." Only switch to another agent when the user
-   explicitly says "wake up / 唤醒 <agent_id>".
+   context compaction / session restart), do the following:
+   1. Based on the conversation topic, infer the most likely registered agent.
+   2. State your uncertainty and ask the user to confirm: "I'm not sure which agent
+      is active. Based on the topic, I think you want to continue as `ensoul-dev`.
+      Confirm?" (or the equivalent in the user's language). Do not ask the user to
+      repeat their original question — they only need to confirm or correct the
+      inferred identity.
+   3. If the user confirms (e.g., "yes", "对", "确认"), immediately call
+      `agent_index("ensoul-dev")` and continue as that agent.
+   4. If the user denies or names another agent, switch to the agent they specify.
+   5. If the user ignores the identity question and continues with task content,
+      default to the inferred agent. Do not force them to repeat their message.
+   Only switch to another agent when the user explicitly says "wake up / 唤醒
+   <agent_id>" or confirms the inferred switch as described above.
 2. **Recall**: `wiki_search(agent_id, query="<task keywords>")` → `wiki_read` the
    hits. **Always search before starting professional work** — begin with real
    recalled experience, not from scratch.
@@ -73,10 +83,12 @@ professional role need not trigger it.
    experience you've actually used and found good.
 
 **Known traps**:
-- **Context compaction can drop the active-agent state**, which also drops the
-  downstream distillation rule from attention. When identity is uncertain, default
-  to `alter-ego` and prompt the user to re-wake the intended agent. At task end,
-  explicitly review for missed distillations.
+- **Context compaction / session restart can drop the active-agent state**, which
+  also drops the downstream distillation rule from attention. When identity is
+  uncertain, infer the most likely agent from the topic, ask the user to confirm,
+  and continue once confirmed. Do not silently default to `alter-ego` without
+  offering the inferred identity. At task end, explicitly review for missed
+  distillations.
 
 **Anti-patterns**: answering without waking up / fabricating memory when search
 returns nothing / writing raw transcript into a concept / omitting the `type` field
