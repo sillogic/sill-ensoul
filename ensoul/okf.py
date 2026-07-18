@@ -324,7 +324,7 @@ def write_concept(agent_id: str, concept_id: str, type: str,
     fm = {
         "type": type, "title": title, "description": description,
         "tags": tags or [],
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z"),
     }
     if extra:
         fm.update(extra)
@@ -339,7 +339,7 @@ def append_log(agent_id: str, action: str, detail: str) -> dict:
     Uses atomic read-modify-write so concurrent callers are less likely to
     corrupt the file (ROADMAP #11)."""
     f = _agent_dir(agent_id) / "log.md"
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now().astimezone().strftime("%Y-%m-%d")
     entry = f"* **{action}**: {detail}"
     text = f.read_text(encoding="utf-8") if f.exists() else "# Directory Update Log\n"
     if "# Directory Update Log" not in text:
