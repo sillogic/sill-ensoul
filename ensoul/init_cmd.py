@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import TypedDict
 
-from .okf import kb_root, create_agent
+from .okf import kb_root, create_agent, list_agents, rebuild_index
 
 
 # The thin shell (CLI-agnostic workflow rules). Kept inline so the package
@@ -199,6 +199,33 @@ def sync_shell() -> int:
     return 0
 
 
+def rebuild_indices() -> int:
+    print("=" * 60)
+    print("  sill-ensoul rebuild-index")
+    print("=" * 60)
+    print()
+
+    agents = list_agents()
+    if not agents:
+        print("  No agents found. Run `sill-ensoul-init` first.")
+        print()
+        return 1
+
+    for a in agents:
+        agent_id = a["agent_id"]
+        try:
+            result = rebuild_index(agent_id)
+            print(f"  [done] {agent_id}: {result['indexed_concepts']} concepts indexed")
+        except FileNotFoundError as e:
+            print(f"  [skip] {agent_id}: {e}")
+
+    print()
+    print("Index rebuild complete. The .fts/ directories are derived data and")
+    print("can be deleted; they will be rebuilt on demand.")
+    print()
+    return 0
+
+
 def init_kb() -> int:
     kb = kb_root()
     agents_dir = kb / "agents"
@@ -246,6 +273,7 @@ def init_kb() -> int:
     print("Manual options:")
     print("  sill-ensoul-init --print-shell >> <CLI instruction file>")
     print("  sill-ensoul-init --sync-shell          (update existing marked shells)")
+    print("  sill-ensoul-init --rebuild-index       (rebuild FTS index for all agents)")
     print("(append, don't overwrite) + register `sill-ensoul-mcp` as an MCP server.")
     print()
     print("=" * 60)
@@ -268,6 +296,11 @@ def main() -> int:
         action="store_true",
         help="Sync the shell into supported CLI instruction files (Claude Code, Zcode).",
     )
+    parser.add_argument(
+        "--rebuild-index",
+        action="store_true",
+        help="Rebuild the FTS index for all agents.",
+    )
     args = parser.parse_args()
 
     if args.print_shell:
@@ -276,6 +309,9 @@ def main() -> int:
 
     if args.sync_shell:
         return sync_shell()
+
+    if args.rebuild_index:
+        return rebuild_indices()
 
     return init_kb()
 

@@ -75,6 +75,7 @@ Set `ENSOUL_KB=<path>` to put it anywhere (e.g. a Dropbox / iCloud folder for mu
         sill-ensoul-mcp (MCP server, 8 tools, read/write/search)
            |  read/write
   knowledge/agents/<id>/   ← one OKF bundle per ensouler (markdown files)
+  knowledge/agents/<id>/.fts/index.db   ← local SQLite FTS5 index, derived from the .md files
 ```
 
 **Three-layer separation** (design decisions D1/D2, see [docs/ROADMAP.md](docs/ROADMAP.md)):
@@ -82,6 +83,8 @@ Set `ENSOUL_KB=<path>` to put it anywhere (e.g. a Dropbox / iCloud folder for mu
 - **Engine** (`ensoul/`) — CLI-agnostic, handles data/tools only, no inference. `server.py` is a thin MCP shell, pass-through only.
 - **Shell** (`AGENTS.md` / `CLAUDE.md`) — one per CLI, defines "when to wake/search/distill", references the shared [WORKFLOW.md](WORKFLOW.md).
 - **Memory** (`knowledge/agents/<id>/`) — OKF markdown files, git-able, diff-able, human-readable.
+
+**About the `.fts/index.db` file**: Each agent bundle has a local SQLite FTS5 index that caches metadata and accelerates search. It is derived data — the `.md` files are always the source of truth. You can delete `.fts/` at any time; it will be rebuilt on demand. SQLite is part of Python's standard library, so there is no extra install and no separate database process.
 
 Core loop: **wake** (load persona + knowledge map) → **recall** (search relevant experience) → **cite** (reference real memory with concept_id) → **distill** (new experience, written directly with a heads-up). Memory persists across projects and sessions.
 

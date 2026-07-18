@@ -9,9 +9,12 @@ Design:
   for mixed zh/en retrieval (DESIGN: "先 FTS5 省事").
 - Ranking: bm25(). Lower (more negative) = more relevant; we negate so higher
   score = better, matching the old str.count() contract.
-- Freshness: indexed by concept_id (relative path). search() does an incremental
-  sync (upsert/delete to match current files) before querying, so the index is
+- Freshness: indexed by concept_id (relative path). sync_index() does an
+  incremental sync (upsert/delete to match current files), so the index is
   always consistent with the bundle without a separate rebuild step.
+- Metadata cache: the `meta` table also caches title/description/tags/type and
+  a body preview. This lets okf.search() and agent_index() serve results without
+  reading every .md file on every query.
 
 Pure logic, no MCP dependency — unit-testable on its own (like okf.py).
 """
@@ -35,6 +38,20 @@ _FTS_SCHEMA = """CREATE VIRTUAL TABLE IF NOT EXISTS concepts USING fts5(
     tokenize = 'unicode61 remove_diacritics 2'
 )"""
 
+# Metadata cache: one row per concept. Caches lightweight fields so search and
+# agent_index can avoid reading every .md file on every query. body_preview is
+# the first 500 chars of the body, used for snippets.
+_META_SCHEMA = """CREATE TABLE IF NOT EXISTS meta(
+    concept_id TEXT PRIMARY KEY,
+    mtime REAL,
+    size INTEGER,
+    title TEXT,
+    description TEXT,
+    tags TEXT,
+    type TEXT,
+    body_preview TEXT
+)"""
+
 # unicode61 treats a contiguous CJK run as ONE token (e.g. "双塔模型" is a
 # single token), so substring search like "双塔" never matches. To make CJK
 # retrievable at sub-word granularity with zero dependencies (no jieba), we
@@ -42,6 +59,8 @@ _FTS_SCHEMA = """CREATE VIRTUAL TABLE IF NOT EXISTS concepts USING fts5(
 # as tokens [双, 塔, 模, 型], and the phrase "双塔" matches the adjacent pair.
 # ASCII/Latin runs are left intact so English word matching still works.
 _CJK = re.compile(r"[一-鿿]")
+
+_PREVIEW_LEN = 500
 
 
 def _segment_for_index(text: str) -> str:
@@ -57,10 +76,6 @@ def _segment_for_index(text: str) -> str:
             out.append(tok)
     return "".join(out)
 
-_META_SCHEMA = """CREATE TABLE IF NOT EXISTS meta(
-    concept_id TEXT PRIMARY KEY,
-    mtime REAL
-)"""
 
 # Per-process connection cache keyed by agent_dir. sqlite3 connections are not
 # shareable across threads by default; we keep one per (agent_dir, thread).
@@ -106,11 +121,12 @@ def reset_cache_for_tests() -> None:
 
 
 def _index_document(conn: sqlite3.Connection, concept_id: str, title: str,
-                    description: str, tags: str, body: str, mtime: float) -> None:
-    # Segment CJK per-char at index time (see _segment_for_index) so sub-word
-    # CJK search works without a segmenter.
+                    description: str, tags: str, body: str, mtime: float,
+                    size: int, type: str) -> None:
+    """Upsert both the FTS row and the metadata cache for one concept."""
+    preview = (body or "")[:_PREVIEW_LEN]
+    # Segment CJK per-char at index time so sub-word CJK search works.
     conn.execute("DELETE FROM concepts WHERE concept_id = ?", (concept_id,))
-    conn.execute("DELETE FROM meta WHERE concept_id = ?", (concept_id,))
     conn.execute(
         "INSERT INTO concepts(concept_id, title, description, tags, body) "
         "VALUES (?,?,?,?,?)",
@@ -118,16 +134,20 @@ def _index_document(conn: sqlite3.Connection, concept_id: str, title: str,
          _segment_for_index(description or ""),
          _segment_for_index(tags or ""),
          _segment_for_index(body or "")))
-    conn.execute("INSERT OR REPLACE INTO meta(concept_id, mtime) VALUES (?,?)",
-                 (concept_id, mtime))
+    conn.execute(
+        "INSERT OR REPLACE INTO meta "
+        "(concept_id, mtime, size, title, description, tags, type, body_preview) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        (concept_id, mtime, size, title or "", description or "",
+         tags or "", type or "", preview))
 
 
 def sync_index(agent_dir: Path, concepts: list[dict]) -> None:
     """Bring the index in sync with the given concepts.
 
-    `concepts` is a list of {concept_id, title, description, tags, body, mtime}.
-    Upserts changed docs and removes docs no longer present. Called by
-    okf.search() right before querying, so callers never manage freshness.
+    `concepts` is a list of dicts with keys:
+      concept_id, title, description, tags, body, type, mtime, size.
+    Upserts changed docs and removes docs no longer present.
     """
     conn = _connect(agent_dir)
     seen = set()
@@ -135,11 +155,15 @@ def sync_index(agent_dir: Path, concepts: list[dict]) -> None:
         cid = c["concept_id"]
         seen.add(cid)
         row = conn.execute(
-            "SELECT mtime FROM meta WHERE concept_id=?", (cid,)).fetchone()
-        if row and abs(row["mtime"] - c["mtime"]) < 0.001:
+            "SELECT mtime, size FROM meta WHERE concept_id=?", (cid,)).fetchone()
+        if (row and
+            abs(row["mtime"] - c["mtime"]) < 0.001 and
+            row["size"] == c.get("size", -1)):
             continue  # unchanged
-        _index_document(conn, cid, c.get("title", ""), c.get("description", ""),
-                        c.get("tags", ""), c.get("body", ""), c["mtime"])
+        _index_document(
+            conn, cid, c.get("title", ""), c.get("description", ""),
+            c.get("tags", ""), c.get("body", ""), c["mtime"],
+            c.get("size", 0), c.get("type", ""))
     # delete dropped concepts
     rows = conn.execute("SELECT concept_id FROM meta").fetchall()
     for r in rows:
@@ -149,6 +173,51 @@ def sync_index(agent_dir: Path, concepts: list[dict]) -> None:
             conn.execute("DELETE FROM meta WHERE concept_id = ?",
                          (r["concept_id"],))
     conn.commit()
+
+
+def clear_index(agent_dir: Path) -> None:
+    """Drop all indexed data for an agent. Used by --rebuild-index."""
+    conn = _connect(agent_dir)
+    conn.execute("DELETE FROM concepts")
+    conn.execute("DELETE FROM meta")
+    conn.commit()
+
+
+def get_meta(agent_dir: Path, concept_id: str) -> dict | None:
+    """Return cached metadata for a single concept, or None if not indexed."""
+    conn = _connect(agent_dir)
+    row = conn.execute(
+        "SELECT concept_id, title, description, tags, type, body_preview "
+        "FROM meta WHERE concept_id=?", (concept_id,)).fetchone()
+    if not row:
+        return None
+    return {
+        "concept_id": row["concept_id"],
+        "title": row["title"],
+        "description": row["description"],
+        "tags": row["tags"],
+        "type": row["type"],
+        "body_preview": row["body_preview"],
+    }
+
+
+def list_meta(agent_dir: Path) -> list[dict]:
+    """Return cached metadata for all indexed concepts."""
+    conn = _connect(agent_dir)
+    rows = conn.execute(
+        "SELECT concept_id, title, description, tags, type, body_preview "
+        "FROM meta ORDER BY concept_id").fetchall()
+    return [
+        {
+            "concept_id": r["concept_id"],
+            "title": r["title"],
+            "description": r["description"],
+            "tags": r["tags"],
+            "type": r["type"],
+            "body_preview": r["body_preview"],
+        }
+        for r in rows
+    ]
 
 
 def _phrase_terms(query: str) -> list[str]:
@@ -168,7 +237,7 @@ def _phrase_terms(query: str) -> list[str]:
 
 
 def _run(conn: sqlite3.Connection, match_expr: str, limit: int) -> list[sqlite3.Row]:
-    sql = ("SELECT concept_id, title, bm25(concepts) AS rank "
+    sql = ("SELECT concept_id, bm25(concepts) AS rank "
            "FROM concepts WHERE concepts MATCH ? ORDER BY rank LIMIT ?")
     try:
         return conn.execute(sql, (match_expr, limit)).fetchall()
@@ -196,9 +265,12 @@ def search(agent_dir: Path, query: str, limit: int = 5) -> list[dict]:
     except FTSQueryError:
         return []
     for r in rows:
+        meta = get_meta(agent_dir, r["concept_id"])
         out.append({
             "concept_id": r["concept_id"],
-            "title": r["title"],
+            "title": meta["title"] if meta else r["concept_id"],
+            "type": meta["type"] if meta else "",
             "score": -r["rank"] if r["rank"] is not None else 0.0,
+            "body_preview": meta["body_preview"] if meta else "",
         })
     return out

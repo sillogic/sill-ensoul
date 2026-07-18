@@ -75,6 +75,7 @@ sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
         sill-ensoul-mcp（MCP server，8 个工具，读写检索）
            |  读写
   knowledge/agents/<id>/   ← 每个 ensouler 一个 OKF bundle（markdown 文件）
+  knowledge/agents/<id>/.fts/index.db   ← 本地 SQLite FTS5 索引，由 .md 文件派生
 ```
 
 **三层分离**（设计决策 D1/D2，详见 [docs/ROADMAP.md](docs/ROADMAP.md)）：
@@ -82,6 +83,8 @@ sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
 - **引擎层**（`ensoul/`）— CLI 无关，只管数据/工具，不碰推理。`server.py` 是薄 MCP 壳，只透传。
 - **薄壳层**（`AGENTS.md` / `CLAUDE.md`）— 每 CLI 一份，定义"何时唤醒/检索/沉淀"，引用共享的 [WORKFLOW.md](WORKFLOW.md)。
 - **记忆本体**（`knowledge/agents/<id>/`）— OKF markdown 文件，可 git、可 diff、人可读。
+
+**关于 `.fts/index.db` 文件**：每个 agent bundle 都有一个本地 SQLite FTS5 索引，用于缓存元数据并加速检索。它是**派生数据**——`.md` 文件永远是唯一权威源。你可以随时删除 `.fts/`，它会在需要时自动重建。SQLite 是 Python 标准库的一部分，不需要额外安装，也没有独立数据库进程。
 
 核心循环：**唤醒**（加载 persona + 知识地图）→ **召回**（检索相关经验）→ **引用**（带 concept_id 引用真实记忆）→ **沉淀**（提炼新经验，直接写入并告知）→ 跨项目/会话留存。
 

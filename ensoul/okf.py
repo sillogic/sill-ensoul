@@ -7,6 +7,11 @@ Reserved filenames: index.md (directory map) and log.md (update history).
 
 This module is pure logic and has no MCP dependency, so it can be unit-tested
 on its own (see tests/test_smoke.py).
+
+Storage model:
+- OKF markdown files are the source of truth.
+- A per-agent SQLite FTS5 index at <agent_dir>/.fts/index.db caches metadata
+  and accelerates search/agent_index. It can be deleted and rebuilt at any time.
 """
 from __future__ import annotations
 
@@ -199,6 +204,10 @@ def _iter_concepts(agent_id: str):
         yield p
 
 
+def _concept_id_from_path(base: Path, path: Path) -> str:
+    return path.relative_to(base).with_suffix("").as_posix()
+
+
 def read_concept(agent_id: str, concept_id: str) -> dict:
     """concept_id uses '/' separators, no .md suffix (e.g. 'projects/recsys')."""
     if ".." in concept_id.split("/"):
@@ -211,78 +220,87 @@ def read_concept(agent_id: str, concept_id: str) -> dict:
             "frontmatter": fm, "body": body}
 
 
-def _snippet(body: str, words: list[str], width: int = 160) -> str:
-    low = body.lower()
-    pos = min((low.find(w) for w in words if low.find(w) >= 0), default=0)
-    start = max(0, pos - 40)
-    s = body[start:start + width].replace("\n", " ").strip()
-    return ("..." + s + "...") if start > 0 else (s + "...")
+def _sync_agent_index(agent_id: str) -> None:
+    """Scan the agent's OKF files and update the SQLite index incrementally.
 
-
-def search(agent_id: str, query: str, limit: int = 5) -> list[dict]:
-    """Full-text search over an agent's wiki, BM25-ranked via SQLite FTS5 (H1).
-
-    The index lives at <agent_dir>/.fts/index.db and is synced incrementally
-    before each query, so it is always consistent with the bundle. Persona
-    (AGENT.md) and OKF reserved files are excluded (H7). Falls back to nothing
-    (empty results) if FTS5 is unavailable.
-
-    NOTE: this implementation reads every concept file on every query to build
-    the in-memory lookup used for snippet/title enrichment. For bundles with
-    hundreds of concepts this is fine; for thousands, consider caching parsed
-    frontmatter or reading only the hit concepts.
+    Only reads files that are new or changed (by mtime + size). Files with
+    malformed frontmatter are skipped with a warning.
     """
+    from . import fts
+
     base = _agent_dir(agent_id)
     if not base.exists():
-        return []
-    # Gather all concepts (with mtime for incremental sync) + build a lookup.
-    docs: list[dict] = []
-    by_cid: dict[str, dict] = {}
+        return
+
+    concepts: list[dict] = []
     for p in _iter_concepts(agent_id):
-        rel = p.relative_to(base).with_suffix("").as_posix()
+        rel = _concept_id_from_path(base, p)
+        stat = p.stat()
+        # Try the lightweight cache first; only read+parse if changed.
+        cached = fts.get_meta(base, rel)
+        if (cached and
+            abs(cached.get("mtime", 0) - stat.st_mtime) < 0.001 and
+            cached.get("size", -1) == stat.st_size):
+            concepts.append({
+                "concept_id": rel,
+                "title": cached["title"],
+                "description": cached["description"],
+                "tags": cached["tags"],
+                "type": cached["type"],
+                "body": cached.get("body_preview", ""),
+                "mtime": stat.st_mtime,
+                "size": stat.st_size,
+            })
+            continue
+
         try:
-            fm, body = parse_markdown(p.read_text(encoding="utf-8"))
+            text = p.read_text(encoding="utf-8")
+            fm, body = parse_markdown(text)
         except yaml.YAMLError as e:
-            # A concept with malformed frontmatter breaks search for the whole
-            # bundle. Skip it but surface the problem via stderr so the user can
-            # fix the file. read_concept() will still raise when called directly.
             import warnings
             warnings.warn(f"skipping malformed OKF frontmatter in {p}: {e}")
             continue
         tags = fm.get("tags") or []
-        doc = {
+        concepts.append({
             "concept_id": rel,
             "title": str(fm.get("title", "")),
             "description": str(fm.get("description", "")),
             "tags": " ".join(str(t) for t in tags),
             "body": body,
-            "mtime": p.stat().st_mtime,
-            "type": fm.get("type", ""),
-        }
-        docs.append(doc)
-        by_cid[rel] = doc
-    if not docs:
+            "mtime": stat.st_mtime,
+            "size": stat.st_size,
+            "type": str(fm.get("type", "")),
+        })
+
+    fts.sync_index(base, concepts)
+
+
+def search(agent_id: str, query: str, limit: int = 5) -> list[dict]:
+    """Full-text search over an agent's wiki, BM25-ranked via SQLite FTS5 (H1).
+
+    The index at <agent_dir>/.fts/index.db is synced incrementally before each
+    query, so it is always consistent with the OKF bundle. Only new or changed
+    concept files are read from disk. Persona (AGENT.md) and OKF reserved files
+    are excluded (H7).
+    """
+    base = _agent_dir(agent_id)
+    if not base.exists():
         return []
 
+    _sync_agent_index(agent_id)
+
     from . import fts
-    fts.sync_index(base, docs)
     hits = fts.search(base, query, limit=limit)
-    # Enrich FTS hits with type + snippet (read from already-parsed docs.
-    # NOTE: use the ORIGINAL doc title, not fts's returned title — the FTS
-    # index stores CJK-segmented text (spaces between chars) for retrieval,
-    # so its title column is polluted ("机 器 学 习"). Title for display must
-    # come from the parsed frontmatter (by_cid), which is pristine.
     out = []
     for h in hits:
         cid = h["concept_id"]
-        doc = by_cid.get(cid, {})
         out.append({
             "agent_id": agent_id,
             "concept_id": cid,
-            "title": doc.get("title") or cid,
-            "type": doc.get("type", ""),
+            "title": h.get("title") or cid,
+            "type": h.get("type", ""),
             "score": round(h["score"], 4),
-            "snippet": _snippet(doc.get("body", ""), query.split()),
+            "snippet": _snippet(h.get("body_preview", ""), query.split()),
         })
     return out
 
@@ -348,12 +366,63 @@ def agent_index(agent_id: str) -> dict:
     persona = _read_persona(agent_id)
     idx_file = _agent_dir(agent_id) / "index.md"
     index_text = idx_file.read_text(encoding="utf-8") if idx_file.exists() else ""
-    concepts = []
-    for p in _iter_concepts(agent_id):
-        rel = p.relative_to(_agent_dir(agent_id)).with_suffix("").as_posix()
-        fm, _ = parse_markdown(p.read_text(encoding="utf-8"))
-        concepts.append({"concept_id": rel, "title": fm.get("title", p.stem),
-                         "type": fm.get("type", "")})
+
+    _sync_agent_index(agent_id)
+
+    from . import fts
+    concepts = [
+        {"concept_id": c["concept_id"],
+         "title": c["title"] or c["concept_id"],
+         "type": c["type"]}
+        for c in fts.list_meta(base)
+    ]
+
     return {"agent_id": agent_id,
             "persona_preview": persona["preview"] if persona else None,
             "index_md": index_text, "concepts": concepts}
+
+
+def rebuild_index(agent_id: str) -> dict:
+    """Force a full rebuild of the SQLite index for an agent.
+
+    Reads every concept file and re-indexes it. Use when the index is suspected
+    to be out of sync (e.g. after manual bulk edits outside the MCP tools).
+    """
+    base = _agent_dir(agent_id)
+    if not base.exists():
+        raise FileNotFoundError(f"agent '{agent_id}' not found")
+
+    from . import fts
+    fts.clear_index(base)
+
+    concepts: list[dict] = []
+    for p in _iter_concepts(agent_id):
+        rel = _concept_id_from_path(base, p)
+        stat = p.stat()
+        try:
+            text = p.read_text(encoding="utf-8")
+            fm, body = parse_markdown(text)
+        except yaml.YAMLError:
+            continue
+        tags = fm.get("tags") or []
+        concepts.append({
+            "concept_id": rel,
+            "title": str(fm.get("title", "")),
+            "description": str(fm.get("description", "")),
+            "tags": " ".join(str(t) for t in tags),
+            "body": body,
+            "mtime": stat.st_mtime,
+            "size": stat.st_size,
+            "type": str(fm.get("type", "")),
+        })
+
+    fts.sync_index(base, concepts)
+    return {"agent_id": agent_id, "indexed_concepts": len(concepts)}
+
+
+def _snippet(body: str, words: list[str], width: int = 160) -> str:
+    low = body.lower()
+    pos = min((low.find(w) for w in words if low.find(w) >= 0), default=0)
+    start = max(0, pos - 40)
+    s = body[start:start + width].replace("\n", " ").strip()
+    return ("..." + s + "...") if start > 0 else (s + "...")

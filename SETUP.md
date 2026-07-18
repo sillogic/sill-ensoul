@@ -106,6 +106,10 @@ If the tools aren't available at all, the MCP server registration failed —
 re-check step 1. If tools are there but `alter-ego` isn't found, `sill-ensoul-init`
 wasn't run or KB location differs — check `ENSOUL_KB` / run `sill-ensoul-init`.
 
+If search feels slow or returns stale results after the user manually edits `.md`
+files outside the tools, run `sill-ensoul-init --rebuild-index` to rebuild the
+local SQLite FTS index from the markdown source of truth.
+
 ## What NOT to do
 
 - Don't hardcode paths assuming a specific CLI (e.g. don't assume `~/.claude/`).

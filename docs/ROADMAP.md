@@ -100,17 +100,18 @@
 | #8 ✅ | 缺 MCP 工具返回值契约测试 | `run_tests.py` 纳入测试，自建临时 KB | 测试不依赖 repo 预存数据（#4） |
 | #9 ✅ | server 绑死 cwd | `pyproject.toml` 定义 `sill-ensoul-mcp` 控制台命令 + `pip install -e .` | 任意 cwd 直接 `sill-ensoul-mcp` |
 | #10 ✅ | 三场景规则（自我认知/项目查询/身份保持） | 写入 WORKFLOW.md §1.1/§2.1/§2.2 | 身份保持是"软身份"换"CLI 无关"的代价，缓解不完美 |
+| #11 ✅ | search/agent_index 每次查询全量读文件 | 扩展 FTS `meta` 表缓存 title/desc/tags/type/body_preview；查询走索引，未变更文件不读 | 保持 OKF 文件为唯一权威源；`.fts/index.db` 是派生索引 |
 
 ### 已知限制（不修，已决策）
 
-#### #11 — 🟢 并发写同一 agent 的 expertise 会丢数据
+#### #12 — 🟢 并发写同一 agent 的 expertise 会丢数据
 
 - **风险**：`wiki_write_concept` 非原子覆盖写；`append_log` 是 read-modify-write。两进程同时写同一 concept → 后覆盖先，无报错。
 - **实际量级**：窄。`projects/` 天然隔离（每项目独立文件），热点只在 `expertise/`（跨项目蒸馏共享区），而蒸馏本就是低频操作。
-- **方案（按工作量）**：① 文件锁（`fcntl`/`msvcrt`）顺序化；② 原子写（临时文件 + `os.replace`）；③ 版本号/冲突检测（过度工程）。
-- **为什么不修**：核心闭环已验证；文件锁 Windows 有坑；加锁是解决还没发生的问题。等真出现并发写再处理。
+- **方案（按工作量）**：① 文件锁（`fcntl`/`msvcrt`）顺序化；② 原子写（临时文件 + `os.replace`）— 已做；③ 版本号/冲突检测（过度工程）。
+- **为什么不修**：核心闭环已验证；文件锁 Windows 有坑；原子写已缓解单进程崩溃。等真出现并发写再处理。
 
-#### #12 — 🟢 server.py 工具数增长后应按职责拆分
+#### #13 — 🟢 server.py 工具数增长后应按职责拆分
 
 - **现状**：`server.py` 8 个 `@mcp.tool` 平铺，Phase 1（8 个 wiki/agent 工具）都在。
 - **何时该拆**：工具数超过 ~15，或出现新的工具组（如未来加记忆压缩、向量化等）。

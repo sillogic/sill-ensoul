@@ -38,6 +38,61 @@ def setup_agent(kb_root):
     # 注意:demo-project 文档故意不含"过拟合",避免与 overfitting 文档构成平局干扰断言
 
 
+def test_index_caching(check, kb_root):
+    """验证索引缓存生效：未变更的文件不会被重新读取解析。"""
+    base = kb_root / "agents" / AGENT
+
+    # 第一次搜索建立索引
+    hits1 = okf.search(AGENT, "双塔")
+    check("缓存测试：首次搜索命中", hits1[0]["concept_id"] == "projects/demo-project")
+
+    # 直接修改缓存中的 title，看搜索结果是否从缓存读（如果是，title 会被篡改后的值）
+    # 这模拟的是"索引比文件新"的异常情况，用来确认 search 真的用了缓存。
+    from ensoul import fts
+    conn = fts._connect(base)
+    conn.execute("UPDATE meta SET title = ? WHERE concept_id = ?",
+                 ("cached-title-check", "projects/demo-project"))
+    conn.commit()
+
+    hits2 = okf.search(AGENT, "双塔")
+    check("缓存测试：搜索使用缓存元数据", hits2[0]["title"] == "cached-title-check")
+
+    # 修改文件内容后，缓存应失效，重新读取文件
+    concept_path = base / "projects" / "demo-project.md"
+    original_text = concept_path.read_text(encoding="utf-8")
+    new_text = original_text.replace("推荐系统重构", "真正的推荐系统重构")
+    concept_path.write_text(new_text, encoding="utf-8")
+
+    hits3 = okf.search(AGENT, "双塔")
+    check("缓存测试：文件变更后缓存失效", hits3[0]["title"] == "真正的推荐系统重构")
+
+    # 恢复文件，避免影响其他测试
+    concept_path.write_text(original_text, encoding="utf-8")
+
+
+def test_rebuild_index(check, kb_root):
+    """验证 --rebuild-index 能正确重建索引。"""
+    base = kb_root / "agents" / AGENT
+
+    # 破坏索引
+    from ensoul import fts
+    fts.clear_index(base)
+    check("rebuild：清除索引后 list_meta 为空", fts.list_meta(base) == [])
+
+    # 重建（前面测试可能已新增 concept，以实际数量为准）
+    current_concepts = len(okf.agent_index(AGENT)["concepts"])
+    result = okf.rebuild_index(AGENT)
+    check(f"rebuild：索引了 {result['indexed_concepts']} 条 concept",
+          result["indexed_concepts"] == current_concepts)
+
+    hits = okf.search(AGENT, "双塔")
+    check("rebuild：重建后搜索正常", hits[0]["concept_id"] == "projects/demo-project")
+
+    idx = okf.agent_index(AGENT)
+    check("rebuild：agent_index concept 清单恢复",
+          len(idx["concepts"]) == current_concepts)
+
+
 def test_frontmatter_error_handling(check, kb_root):
     """坏 frontmatter 应该被感知,而不是静默返回空 dict。"""
     bad_path = kb_root / "agents" / AGENT / "expertise" / "bad-frontmatter.md"
@@ -137,6 +192,12 @@ def main():
             fts.reset_cache_for_tests()  # 新进程模拟
             h = okf.search(AGENT, "unique-token-xyz")
             check("写后立即搜得到", len(h) == 1 and h[0]["concept_id"] == "projects/new")
+
+            print("\n" + "=" * 60)
+            print("  索引缓存与重建")
+            print("=" * 60)
+            test_index_caching(check, kb)
+            test_rebuild_index(check, kb)
 
             print("\n" + "=" * 60)
             print("  错误处理: frontmatter 损坏 / delete_agent 逃逸")
