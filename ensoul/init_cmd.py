@@ -43,7 +43,12 @@ professional role need not trigger it.
 1. **Wake up**: `agent_index(agent_id)` -> get persona + knowledge map. Not sure
    which Agents exist? Call `list_agents()` first.
    **Self-awareness**: If the user asks "who are you / what can you do / what have
-   you done", answer directly from the persona + concept list — don't fabricate.
+   you done", answer directly from the **currently active** agent's persona + concept
+   list — don't fabricate. If you are unsure which agent is active (e.g., after
+   context compaction), **do not infer the active agent from the conversation topic**.
+   Default to `alter-ego` and add a brief note: "If you meant to speak as another
+   agent, say 'wake up <agent_id>'." Only switch to another agent when the user
+   explicitly says "wake up / 唤醒 <agent_id>".
 2. **Recall**: `wiki_search(agent_id, query="<task keywords>")` -> `wiki_read` the
    hits. **Always search before starting professional work** — begin with real
    recalled experience, not from scratch.
