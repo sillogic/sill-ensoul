@@ -49,6 +49,8 @@ pip install -e <repo>          # or, once published: pip install sill-ensoul
 sill-ensoul-init               # builds the global KB + default agent alter-ego
 # then have the CLI's AI read SETUP.md to finish MCP registration + shell install
 ```
+
+Requires **Python >= 3.10**.
 </details>
 
 <details>
@@ -63,6 +65,21 @@ Global KB, not inside any project repo (private memory never enters git):
 | Linux | `$XDG_DATA_HOME/ensoul/knowledge` (default `~/.local/share/ensoul/knowledge`) |
 
 Set `ENSOUL_KB=<path>` to put it anywhere (e.g. a Dropbox / iCloud folder for multi-device sync). Open that folder in Obsidian — each agent is a subfolder, the `.md` files inside are the memory.
+</details>
+
+<details>
+<summary>CLI maintenance commands</summary>
+
+After install, `sill-ensoul-init` provides a few maintenance commands:
+
+| Command | Purpose |
+|---|---|
+| `sill-ensoul-init` | Initialize the global KB + default `alter-ego` agent (idempotent). |
+| `sill-ensoul-init --print-shell` | Print the CLI-agnostic shell for manual append to a CLI instruction file. |
+| `sill-ensoul-init --sync-shell` | Auto-update sill-ensoul shell segments in supported CLI instruction files (Claude Code, Zcode, Codex, OpenCode). |
+| `sill-ensoul-init --rebuild-index` | Rebuild the SQLite FTS index for every agent from the `.md` source of truth. |
+
+Supported CLI instruction files are detected automatically; only the ones that exist and already contain sill-ensoul markers are updated.
 </details>
 
 ---

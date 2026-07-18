@@ -48,7 +48,14 @@ _CLI_TARGETS: list[_CLITarget] = [
         "name": "Zcode",
         "path": Path.home() / ".zcode" / "AGENTS.md",
     },
+    {
+        "name": "Codex",
+        "path": Path.home() / ".codex" / "AGENTS.md",
+    },
 ]
+
+# OpenCode uses a skill directory rather than a single marked markdown file.
+_OPENCODE_SKILL_DIR = Path.home() / ".config" / "opencode" / "skills" / "sill-ensoul"
 
 
 # 内置默认 agent —— 用户的数字分身。克隆 + init 后即有一个空壳 agent 可用，
@@ -104,6 +111,35 @@ def _update_shell_file(path: Path, name: str) -> str:
     return "updated"
 
 
+def _update_opencode_skill() -> str:
+    """Update the OpenCode skill directory for sill-ensoul.
+
+    OpenCode uses a skill system: each skill is a directory under
+    ~/.config/opencode/skills/<name>/ containing a SKILL.md file. We create or
+    overwrite the sill-ensoul skill with the current shell content.
+    """
+    skill_dir = _OPENCODE_SKILL_DIR
+    skill_file = skill_dir / "SKILL.md"
+
+    # Check whether OpenCode is installed at all.
+    opencode_dir = skill_dir.parent.parent
+    if not opencode_dir.exists():
+        return "missing"
+
+    skill_dir.mkdir(parents=True, exist_ok=True)
+
+    # OpenCode SKILL.md uses YAML frontmatter with name/description.
+    content = f"""---
+name: sill-ensoul
+description: Long-term memory system for agents across projects and sessions. Wake an agent with "wake up <agent_id>" and recall past experience via wiki_search/wiki_read.
+---
+
+{_load_shell().strip()}
+"""
+    skill_file.write_text(content, encoding="utf-8")
+    return "updated"
+
+
 def sync_shell() -> int:
     print("=" * 60)
     print("  sill-ensoul sync-shell")
@@ -126,6 +162,16 @@ def sync_shell() -> int:
             any_updated = True
         if status in ("unmarked", "malformed"):
             any_attention = True
+
+    # OpenCode is a skill-based CLI, handled separately.
+    opencode_status = _update_opencode_skill()
+    opencode_labels = {
+        "updated": "updated skill",
+        "missing": "missing (OpenCode not installed)",
+    }
+    print(f"  [{opencode_labels[opencode_status]}] OpenCode: {_OPENCODE_SKILL_DIR}/SKILL.md")
+    if opencode_status == "updated":
+        any_updated = True
 
     print()
     if any_updated:

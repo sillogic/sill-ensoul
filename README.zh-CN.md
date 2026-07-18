@@ -49,6 +49,8 @@ pip install -e <repo>          # 或发布后 pip install sill-ensoul
 sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
 # 然后让 CLI 的 AI 读 SETUP.md 完成 MCP 注册 + 薄壳放置
 ```
+
+需要 **Python >= 3.10**。
 </details>
 
 <details>
@@ -63,6 +65,21 @@ sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
 | Linux | `$XDG_DATA_HOME/ensoul/knowledge`（默认 `~/.local/share/ensoul/knowledge`） |
 
 设环境变量 `ENSOUL_KB=<路径>` 可放到任意位置（比如 Dropbox / iCloud 目录做多设备同步）。用 Obsidian 打开这个目录，每个 agent 是一个子文件夹，里面的 `.md` 就是记忆。
+</details>
+
+<details>
+<summary>CLI 维护命令</summary>
+
+安装后，`sill-ensoul-init` 提供几个维护命令：
+
+| 命令 | 作用 |
+|---|---|
+| `sill-ensoul-init` | 初始化全局 KB + 默认 `alter-ego` agent（幂等）。 |
+| `sill-ensoul-init --print-shell` | 打印 CLI 无关的薄壳内容，供手动追加到 CLI 指令文件。 |
+| `sill-ensoul-init --sync-shell` | 自动更新已支持 CLI 指令文件里的 sill-ensoul 薄壳段（Claude Code、Zcode、Codex、OpenCode）。 |
+| `sill-ensoul-init --rebuild-index` | 为每个 agent 从 `.md` 权威源重建 SQLite FTS 索引。 |
+
+已支持的 CLI 指令文件会自动检测；只更新存在且已包含 sill-ensoul 定界标记的文件。
 </details>
 
 ---
