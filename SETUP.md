@@ -116,10 +116,41 @@ The user may have dropped this file into a **Multica conversation** instead of a
 CLI. The intent is the same — wire sill-ensoul into YOU — but the adaptation
 targets are Multica's own, not a per-CLI config:
 
-1. **Register the MCP server via the platform, not per-CLI config**: add
-   `sill-ensoul` to the workspace MCP library (`multica workspace mcp add ...`),
-   then assign it to this agent (`multica agent mcp add <agent-id> ...`). The
-   platform wires the server for every runtime — no `~/.claude/`, no `.mcp.json`.
+1. **Register the MCP server — two routes, use the one actually set up on this
+   runtime** (docs and reality must match — verify, don't assume):
+
+   - **Route A — platform MCP library (recommended destination; not yet the
+     installed reality on the reference setup)**: add `sill-ensoul` to the
+     workspace MCP library (`multica workspace mcp add ...`), then assign it to
+     this agent (`multica agent mcp add <agent-id> ...`). The platform wires
+     the server for every runtime — no `~/.claude/`, no `.mcp.json`. As of
+     2026-08 the reference Multica setup has NOT done this yet
+     (`multica workspace mcp list` returns `[]`); platform registration is
+     tracked as follow-up work. Before registering, make sure the installed
+     package is current (`pip show sill-ensoul` vs the repo version — a stale
+     binary wires the wrong version). If you see `sill-ensoul` in
+     `multica workspace mcp list`, prefer this route.
+   - **Route B — pi extension (the verified, implemented path as of 2026-08)**: pi
+     has no built-in MCP support; the `mcp-bridge.ts` extension in
+     `~/.pi/agent/extensions/` exposes stdio MCP servers declared in
+     `~/.pi/agent/settings.json` as pi tools. The verified registration is:
+     ```json
+     "mcpServers": {
+       "sill-ensoul": {
+         "command": "cmd",
+         "args": ["/c", "sill-ensoul-mcp"],
+         "startupTimeoutMs": 20000
+       }
+     }
+     ```
+     Requires `sill-ensoul-mcp` on PATH (prerequisite 1) and a Multica runtime
+     that is a pi runtime with the `mcp-bridge.ts` extension installed. This is
+     how the reference Multica setup actually runs today — the `list_agents` /
+     `agent_index` / `wiki_*` tools come from this route.
+   - **Decision rule**: run `multica workspace mcp list`. If `sill-ensoul` is
+     registered there, use Route A; otherwise Route B is the verified fallback.
+     Pick the route that matches the actual environment — the goal is docs =
+     reality, so don't document a route that isn't wired up.
 2. **Append the shell to this agent's instructions**: this agent's "instruction
    file" is its `instructions` field. Append the ensouler shell (output of
    `sill-ensoul-init --print-shell`) to the existing instructions — **append, don't
