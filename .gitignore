@@ -22,3 +22,10 @@ shared/
 
 # 竞品分析/调研报告（本地参考，不进仓库）
 docs/openclaw-vs-hermes-report.md
+
+# 本机 CLI 本地产物（技能包/配置/记忆/个人工具）——不进仓库
+.agents/
+.codex/
+.workbuddy/
+skills-lock.json
+tools/
