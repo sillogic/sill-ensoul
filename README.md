@@ -155,6 +155,7 @@ Three release tests, all green = core loop works (each builds its own temp KB, r
 
 - [docs/DESIGN.md](docs/DESIGN.md) — design background: why OKF, why MCP, comparison with mem0/letta/graphiti
 - [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D8 + historical pitfalls H1-H12
+- [docs/multica.md](docs/multica.md) — platform integration guide (Multica): wake-up block template, degradation rules, batch onboarding
 - [WORKFLOW.md](WORKFLOW.md) — CLI-agnostic workflow (wake/recall/distill/skill dispatch)
 - [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI
 
