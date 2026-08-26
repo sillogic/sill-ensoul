@@ -130,54 +130,45 @@ agent** created for the default 分身 `alter-ego` (the digital twin
 `sill-ensoul-init` creates) and bound to it 1:1. Do NOT rename this receiving
 agent — it keeps its own identity.
 
-1. **Register the MCP server — two routes, use the one actually set up on this
-   runtime** (docs and reality must match — verify, don't assume):
+1. **Install ensoul into every CLI Multica recognizes on this machine — the
+   platform MCP library is NOT registered** (SIL-26 final decision 2026-08-26:
+   Multica doesn't host ensoul; the CLIs that Multica runs get ensoul). Result:
+   any runtime Multica uses has the tools, zero per-agent config, no
+   double-wiring. Idempotent — safe to re-run any time:
 
-   - **Route A — platform MCP library (recommended destination; registration is
-     admin/owner-only — an agent run cannot do it)**: add `sill-ensoul` to the
-     workspace MCP library (`multica workspace mcp add ...`), then assign it to
-     this agent (`multica agent mcp add <agent-id> ...`). The platform wires
-     the server for every runtime — no `~/.claude/`, no `.mcp.json`. As of
-     2026-08 (SIL-26) the reference setup has the entry **verified but not yet
-     registered**: `multica workspace mcp add` is denied for an agent run's
-     task-scoped token (admin/owner only) — the **workspace owner** must run the
-     registration (UI or their own CLI), then the agent can do the assignment.
-     The verified server entry (handshake-tested: initialize OK + 8 tools +
-     one tool call) is:
-     ```json
-     {
-       "type": "stdio",
-       "command": "cmd",
-       "args": ["/c", "sill-ensoul-mcp"]
-     }
-     ```
-     `multica workspace mcp add sill-ensoul --server-config-file <entry.json>`,
-     then `multica agent mcp add <agent-id> <server-id>` (server id from
-     `multica workspace mcp list`). Installed package parity (2026-08-26
-     SIL-26): pip `sill-ensoul` v0.3.0 == repo v0.3.0 — no stale-binary drift.
-     If you see `sill-ensoul` in `multica workspace mcp list`, prefer this
-     route.
-   - **Route B — pi extension (the verified, implemented path as of 2026-08)**: pi
-     has no built-in MCP support; the `mcp-bridge.ts` extension in
-     `~/.pi/agent/extensions/` exposes stdio MCP servers declared in
-     `~/.pi/agent/settings.json` as pi tools. The verified registration is:
-     ```json
-     "mcpServers": {
-       "sill-ensoul": {
-         "command": "cmd",
-         "args": ["/c", "sill-ensoul-mcp"],
-         "startupTimeoutMs": 20000
-       }
-     }
-     ```
-     Requires `sill-ensoul-mcp` on PATH (prerequisite 1) and a Multica runtime
-     that is a pi runtime with the `mcp-bridge.ts` extension installed. This is
-     how the reference Multica setup actually runs today — the `list_agents` /
-     `agent_index` / `wiki_*` tools come from this route.
-   - **Decision rule**: run `multica workspace mcp list`. If `sill-ensoul` is
-     registered there, use Route A; otherwise Route B is the verified fallback.
-     Pick the route that matches the actual environment — the goal is docs =
-     reality, so don't document a route that isn't wired up.
+   a. **Package + KB, machine-level, once** (idempotent):
+      - `sill-ensoul-mcp` on PATH? If not, `pip install sill-ensoul` (or
+        `pip install -e <repo>`) — same safety boundary: tell the user first,
+        show the command, get their OK. If yes, check the version with
+        `sill-ensoul-init --version` against the repo/release version — if the
+        installed one is older, run the UPGRADE.md flow (upgrade package +
+        `sill-ensoul-init --sync-shell`).
+      - Run `sill-ensoul-init` (idempotent — creates the global KB + default
+        分身 `alter-ego`, skips if already there).
+   b. **Detect the CLIs** — the set Multica recognizes on this machine:
+      - `multica runtime list --output json` → the runtimes registered for this
+        machine (provider field), AND
+      - scan PATH for the known agent CLI commands (`claude` / `codex` /
+        `opencode` / `pi` / `cursor-agent` / `kimi` / `qodercli` / `qwen` / …
+        — the same known-command list the Multica daemon probes; inside a task
+        `multica daemon probe-runtimes` is unavailable, so use runtime list +
+        PATH scan and take the union).
+      - Each unique CLI in the union gets step c.
+   c. **Per CLI, idempotent**:
+      - Already has the sill-ensoul MCP server registered (its own config)?
+        Skip registration. Not registered → register using THAT CLI's current
+        mechanism (the per-CLI steps earlier in this file are the reference:
+        `claude mcp add --scope user`, a config-file entry, `.mcp.json`, or the
+        pi extension `~/.pi/agent/settings.json` + `mcp-bridge.ts` — each CLI
+        has its own).
+      - Instruction file already contains `<!-- SILL-ENSOUL-SHELL-START -->`?
+        Skip. Not present → append `sill-ensoul-init --print-shell` output once
+        (never append twice; if unsure, ask).
+      - No per-CLI version step needed: one machine = one server version = one
+        KB, and step a already aligned the package.
+   d. **Do NOT register the platform MCP library** (`multica workspace mcp add`
+      / `multica agent mcp add`). It's a future option (remote server / several
+      runtimes coexisting / multi-machine) — not part of this setup.
 2. **Create the Multica agent for the default 分身 `alter-ego` and bind it**:
    Multica agents and ensoul 分身 are bound 1:1 — the binding is a wake-up block
    in the agent's `instructions` (there is no platform-level link). Create a new
@@ -200,10 +191,9 @@ agent — it keeps its own identity.
      `**身份优先级**:平台行为契约(issue 工作流/评论纪律)优先;分身用于专业判断与记忆。`
      The `ensoul-multica-binding` skill template already has it; if you hand-write
      the block, add it — new bindings are born with it, not patched later.
-   - **Runtime/model**: pick the runtime that actually exposes the ensoul MCP
-     tools (Route A = any runtime after workspace registration; Route B = the pi
-     runtime with the `mcp-bridge.ts` extension) and the same model this agent
-     uses.
+   - **Runtime/model**: pick any local runtime on this machine — after step 1
+     every CLI Multica recognizes here has ensoul, so every runtime has the
+     tools. Use the same model this agent uses.
    - **Attach the binding skill (if present)**: `multica skill list` — if
      `ensoul-multica-binding` exists, attach it so the new agent can bind further
      agents/分身 later: `multica agent skills add <new-agent-id> --skill-ids
@@ -237,8 +227,9 @@ wording naturally, but cover all three points):
 - **In Multica**: open the new **`alter-ego`** agent and start a chat there — it
   is your digital twin. Say `唤醒 alter-ego` (or `wake up alter-ego` / `唤醒分身`)
   in that conversation to start.
-- **In a per-CLI setup**: restart this CLI (config/instruction files load at
-  startup, not hot-reloaded), then in a new session:
+- **In a CLI you use directly**: every detected CLI was wired in step 1 —
+  restart that CLI (config/instruction files load at startup, not
+  hot-reloaded), then in a new session:
 
 **👉 Say `唤醒 alter-ego`** (or `wake up alter-ego` / `唤醒分身`) to start.
 `alter-ego` is your digital twin — empty memory, accumulate experience with it

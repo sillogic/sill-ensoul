@@ -32,33 +32,22 @@ ensoul 与 Multica **无结构性冲突，分层互补**：
 - 整个仓库 0 行 multica 相关代码，依赖仅 `mcp` + `pyyaml`。multica 支持 = 平台侧配置
   （MCP 注册 + agent 分配，配置活在平台里不进仓库）+ 一份薄壳（`shells/multica/AGENTS.md`）。
   代码零分叉，专门分支里没有任何差异 → 纯维护负担。
-- 单分支同时服务两类用户：无 multica 用户走自己 CLI 的 MCP 配置；multica 用户走平台
-  MCP 库注册 / pi 扩展。运行时代码路径不分叉。
+- 单分支同时服务两类用户：无 multica 用户走自己 CLI 的 MCP 配置；multica 用户走 CLI 级安装（SETUP.md setupmd 流程，见 §3.3）。运行时代码路径不分叉。
 - **判断模板**：要不要为某平台/客户分叉？先 grep 仓库有没有该平台相关代码；集成若只是
   配置 + 薄壳，一律主分支 + 文档，不分叉。
 
-## 3. MCP 接入路径（文档 = 现实，2026-08 对齐）
+## 3. MCP 接入路径（文档 = 现实，2026-08-26 最终定案）
 
-两条路径，**平台库路线 = 正式主路径（SIL-26 定案）**；pi 扩展路线 = Pi runtime 的当前交付通道 + CLI 本地兑底。双路径共存由构造保证兼容（见 §3.1）：
+**一条主路径：CLI/runtime 级安装** —— setup 时把 ensoul 装进本机所有被 Multica 识别到的 CLI；任何 runtime 都有工具，零 per-agent 配置，无双写。**平台 MCP 库 = 未来选项**（远程 server / 多 runtime 并存 / 多机时再上），现在不注册（SIL-26 最终定案，2026-08-26 用户确认）：
 
 | 路径 | 状态 | 说明 |
 |---|---|---|
-| **平台 MCP 库路线**（主路径） | ✅ 设计定案 · ⏳ 待 owner 注册 | `multica workspace mcp add` + `multica agent mcp add`，任何 runtime CLI 可用。server 条目（`cmd /c sill-ensoul-mcp`）已实测握手通过（initialize + 8 工具 + 调用）；**`workspace mcp add` 是 admin/owner 操作，agent run 的 task-scoped token 会被拒** —— 注册需 workspace owner 执行（UI 或自己的 CLI），命令见下 |
-| **pi 扩展路线**（兑底/当前交付） | ✅ 实装 | `~/.pi/agent/settings.json` → `cmd /c sill-ensoul-mcp`，经 `extensions/mcp-bridge.ts` 把 8 个 ensoul 工具暴露给 run 内 agent（Pi runtime 当前实际交付通道；pi 无原生 MCP） |
+| **CLI/runtime 级安装**（主路径） | ✅ 定案 + 本机已实装 | 把 sill-ensoul 装进每个被 Multica 识别到的 CLI（pi 扩展 bridge / `claude mcp add` / opencode mcp / …）；per-runtime 注入 → 该 runtime 上所有 agent 自动有工具。幂等（已装跳过）+ 版本检查（旧了升级，UPGRADE.md） |
+| **平台 MCP 库**（未来选项） | ⏸ 暂缓 | `multica workspace mcp add` + `agent mcp add`（admin/owner 操作，agent 被服务端硬拒）；价值场景（远程/多 runtime 并存/多机）全在暂缓边界内，不提前做 |
 
-**注册命令（owner 执行一次；SIL-26 实测权限模型）**：
+版本对齐（SIL-26 复核）：一台机器一个 server 版本一个 KB —— pip 安装 `sill-ensoul` v0.3.0 == 仓库 v0.3.0，无漂移。
 
-```bash
-# 条目（已实测：initialize OK + 8 工具 + 调用）
-# {"type":"stdio","command":"cmd","args":["/c","sill-ensoul-mcp"]}
-multica workspace mcp add sill-ensoul --server-config-file ./entry.json
-multica agent mcp add <agent-id> <server-id>   # server-id 取 workspace mcp list
-```
-
-版本对齐（SIL-26 复核）：pip 安装 `sill-ensoul` v0.3.0 == 仓库 v0.3.0，无漂移。
-
-**新人注意**：SETUP.md 的「Multica adaptation」一节现按双路径写（平台注册 + pi 扩展
-均已说明）；装好后用 `multica agent get` 确认 agent 能调 `list_agents` / `agent_index`。
+**新人安装流程（setupmd）**见 §3.3；SETUP.md 的「Multica adaptation」一节是可执行版本。装好后用 `multica agent get` 确认 agent 能调 `list_agents` / `agent_index`。
 
 ### 3.1 三类用户兼容性 + 嵌套 CLI 约定（SIL-26 设计输入，2026-08）
 
@@ -78,19 +67,21 @@ MCP，但担心「装了 ensoul 的 multica 调装了 ensoul 的 CLI」出问题
      管（已持 8 工具）；嵌套会话按各 CLI 机制禁用 ensoul（配置动作，非代码分叉）。嵌
      套确实要用 → 换不同 agent_id，或接受去重（蒸馏规则先 search 再写天然防重）；
      `ENSOUL_KB` 可整体切库做完全隔离，但那是隔离非共享，一般不要。
-  2. **同一命令注册**：平台侧与 CLI 侧用同一注册命令（`cmd /c sill-ensoul-mcp`），
-     一台机器一个 server 版本一个 KB，消灭版本漂移。
-- **三类用户落法**：只用 multica = 平台库注册 + agent 分配（工具直调）；只用 CLI =
-  各 CLI 自配（现状）；两者都用 = 同一二进制同一 KB 两处配置共存，错开使用零冲突、
-  同时跑（autopilot + 本地 CLI）有锁兑底，守「嵌套一层写」约定即可。
+  2. **同一机器一个 server 版本一个 KB**：一台机器所有 CLI 注册同一个命令（`cmd /c
+     sill-ensoul-mcp`）、同一个包版本，消灭版本漂移（平台库不注册，注册命令单一性自动
+     满足，剩余纪律 = 版本对齐）。
+- **三类用户落法**：只用 multica = setupmd 装齐所有识别到的 CLI → 任何 runtime 有工具
+  （天然零 per-agent 配置）；只用 CLI = 各 CLI 自配（现状）；两者都用 = 同一二进制同一 KB
+  多处配置共存，错开使用零冲突、同时跑（autopilot + 本地 CLI）有锁兑底，守「嵌套一层写」
+  约定即可。
 - **「嵌套 CLI 没装 ensoul 要不要唤醒时自动装？」—— 不需要，也不建议（2026-08 追加）**：
-  分工的前提**不是**「CLI 也装了 ensoul」，而是「外层 agent 有工具」—— 那是一次性
-  owner 注册（平台库路线）或已实装的 pi 扩展，不是每次唤醒的前提。嵌套 CLI 本来就不
-  承担记忆层（约定 1），唤醒时发现缺 ensoul → 按降级规则继续干活 + 报告一句即可；每次
+  分工的前提**不是**「嵌套的每个 CLI 都装了 ensoul」，而是「外层 agent 有工具」—— 那由
+  setup 时一次性装齐保证（§3.3 setupmd，SIL-26 定案），不是每次唤醒的前提。嵌套 CLI 本来
+  就不承担记忆层（约定 1），唤醒时发现缺 ensoul → 按降级规则继续干活 + 报告一句即可；每次
   唤醒自动装 = 无需求也装，反而把「两个心智写同一分身」的风险重新引入，还欠版本钉死
   （pip v0.3.0 == 仓库 v0.3.0）、幂等、静默改用户机器三笔账。嵌套确实要用 ensoul 的
   场景（换 agent_id 的会话）走一次性安装（`pip install sill-ensoul`）；自动化的正确形态
-  是 bootstrap（新机首次接入时的 install/doctor 一步装 + 注册 + 握手验证），不是运行时
+  是 bootstrap —— §3.3 setupmd 就是它（setup 时一步装齐 + 幂等 + 版本检查），不是运行时
   magic。
 
 ### 3.2 未来演进：远程 server / 多租户 —— 现在不写代码，只留边界（2026-08）
@@ -111,6 +102,29 @@ MCP，但担心「装了 ensoul 的 multica 调装了 ensoul 的 CLI」出问题
   锁，但那不是目标形态。所以远程上服务器的次序 = SIL-7 鉴权先落地。
 - **现在不动的原因**：三张卡都无真实负载验证需求，提前实现违反「能不动就不动」；留边界
   = 这三张卡开工时拿到的是「不需要重构的地基」。
+
+### 3.3 新人安装流程（setupmd，SIL-26 最终定案 2026-08-26）
+
+用户通过 Multica 走 SETUP.md 安装（「setupmd」）：**Multica 平台不装 ensoul，把 ensoul
+装进本机所有被 Multica 识别到的 CLI**（幂等：已装跳过；已装则比版本，旧了升级）。可执行
+版本在 SETUP.md「Multica adaptation」步骤 1，要点：
+
+1. **机器级一次（幂等）**：`sill-ensoul-mcp` 在 PATH 上？没有 → `pip install sill-ensoul`
+   （先告知用户拿 OK）；有 → `sill-ensoul-init --version` 对比仓库/最新，旧了走 UPGRADE.md。
+   `sill-ensoul-init` 跑一遍（建全局 KB + 默认分身 alter-ego，幂等）。
+2. **探测被识别的 CLI**：`multica runtime list --output json`（本机 runtime 的 provider）∪
+   PATH 扫描已知 agent CLI 命令（claude / codex / opencode / pi / cursor-agent / kimi /
+   qodercli / qwen / …，与 daemon probe-runtimes 同一套已知清单；task 内 probe-runtimes
+   不可用，所以用 runtime list + PATH 扫描）。取并集逐个处理。
+3. **逐个 CLI 幂等安装**：已注册 sill-ensoul MCP → 跳过；没注册 → 按该 CLI 自己的机制注册
+   （pi 扩展 bridge / `claude mcp add` / 各 CLI config）。指令文件已含 shell 标记 → 跳过；
+   没有 → `sill-ensoul-init --print-shell` append 一次。版本/升级在机器级已覆盖（一台机器
+   一个 server 版本一个 KB）。
+4. **不注册平台 MCP 库**（未来选项，暂缓）。
+
+**为什么这个形态**：per-runtime 注入 → 该 runtime 上所有 agent 自动有工具，零 per-agent
+配置；setup 时一次性装齐 = 运行时永远不缺（「唤醒时自动装」的否决保持成立，见 §3.1）；
+已装跳过 + 版本检查 = 可重跑、不静默改机器。
 
 ## 4. 分身绑定（决策 4/5/6）
 
@@ -151,14 +165,14 @@ AGENT.md 的 title/description>"` —— 让平台侧「看起来就是」那个
 ### 4.4 通过 SETUP.md 初始化（决策 7 + SIL-29 细化）
 
 老用户把 SETUP.md 直接丢给 multica agent 对话即可初始化，无需专门 md（SIL-27 确认）。
-SETUP.md 内「Multica adaptation」一节覆盖：平台 MCP 注册 / **创建默认分身 `alter-ego` 的
+SETUP.md 内「Multica adaptation」一节覆盖：CLI 级安装（setupmd，§3.3）/ **创建默认分身 `alter-ego` 的
 agent 并绑定**（唤醒块 + skill，SIL-29 起取代「改名接收 agent」）/ 验证。
 
 - **首次安装（SIL-29）**：接收 SETUP.md 的 agent **不改名**、保持自己的 Helper 身份，负责
   **创建**一个名为 `alter-ego` 的新 agent —— instructions = 平台基础（复制接收 agent 的
   instructions）+ 唤醒块（`<分身id>` = `alter-ego`，模板见
-  [shells/multica/AGENTS.md](../shells/multica/AGENTS.md)），runtime 选能调 ensoul MCP 工具
-  的那个（Route A 任意 / Route B pi runtime），挂 `ensoul-multica-binding` skill（若
+  [shells/multica/AGENTS.md](../shells/multica/AGENTS.md)），runtime 选本机任意装好 ensoul 的
+  runtime（CLI 级安装后所有 runtime 都有工具），挂 `ensoul-multica-binding` skill（若
   workspace 已存在）。用户在 workspace 里直接与 `alter-ego` agent 对话即开始使用。
 - **老用户**：更贴合 4.2 的绑定 skill（按领域匹配已有分身 1:1 绑定 + name/description
   同步），非一律 alter-ego。
@@ -188,11 +202,10 @@ agent 并绑定**（唤醒块 + skill，SIL-29 起取代「改名接收 agent」
 
 实测运行态验证：核心模型无问题，**保持现状（P0）**。4 个非致命摩擦点：
 
-1. **MCP 接入路径文档 vs 实际分叉** → 已对齐（见 §3，SIL-24）。
+1. **MCP 接入路径文档 vs 实际分叉** → 已对齐（见 §3，SIL-24 + SIL-26 最终定案：单主路径 = CLI 级安装）。
 2. **身份双壳优先级文字模糊** → 唤醒块加「平台行为契约优先」一句话（见 §4.1 要素 4，
    SIL-25 落地到 10 个 agent）。
-3. **单 runtime 单点**：10 个 agent 全钉 Pi runtime，该 runtime 掉线 → 全部降级「无分身」。
-   远程 MCP/Tailscale（方案 B）已选但**暂缓** —— 已知约束，非新回归。
+3. **单 runtime 单点**：CLI 级安装后（§3.3），同机换 runtime 不再丢工具（该机所有被识别 CLI 都有 ensoul）；跨机仍取决于那台机装没装。远程 MCP/Tailscale（方案 B）已选但**暂缓** —— 已知约束，非新回归。
 4. **记忆厚度不均**：分身绑定只给身份，记忆靠使用累积；空分身需预期管理（用户以为绑了
    分身就「很懂」其实是空记忆）。
 
