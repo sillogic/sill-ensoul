@@ -14,6 +14,11 @@
 > states the *desired end state* and *constraints*. You (the CLI's AI) know best
 > how your own CLI registers MCP servers and where its instruction file lives —
 > use the current mechanism. sill-ensoul stays CLI-agnostic.
+>
+> **Already set up?** This file is for *first-time installation*. If the user says
+> "upgrade" (or re-drops this file on a machine that already has sill-ensoul),
+> read [UPGRADE.md](UPGRADE.md) instead — it upgrades the package and re-syncs
+> the shell without re-running first-time steps.
 
 ## Prerequisites — you (the CLI AI) handle these, don't offload to the user
 
@@ -87,6 +92,11 @@ the CLI's config dir, or a `.mcp.json` at project root. Use whatever is current.
   APPEND the ensouler shell (use `>>` or insert at end), never `>` overwrite. The
   sill-ensoul shell is an independent rule block and coexists with existing instructions.
   If you're unsure, back up the file first.
+- **If the file already contains `<!-- SILL-ENSOUL-SHELL-START -->`** (from a
+  previous setup or upgrade), do NOT append again — that would create a duplicate
+  block. Run `sill-ensoul-init --sync-shell` to replace the marked block in place.
+- **To check the installed version** (e.g. before deciding whether an upgrade is
+  needed): `sill-ensoul-init --version`.
 - After appending, the shell's "Default agent" note tells the LLM that
   `alter-ego` is the default agent and maps "wake up" / "唤醒" / "digital twin"
   / "分身" to `agent_index("alter-ego")`.

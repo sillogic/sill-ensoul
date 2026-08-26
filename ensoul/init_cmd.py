@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import importlib.metadata
 import importlib.resources as resources
 import shutil
 import sys
@@ -29,6 +30,18 @@ def _load_shell() -> str:
 
 _SHELL_START_MARKER = "<!-- SILL-ENSOUL-SHELL-START -->"
 _SHELL_END_MARKER = "<!-- SILL-ENSOUL-SHELL-END -->"
+
+
+def _package_version() -> str:
+    """Return the installed sill-ensoul package version.
+
+    Used by `--version` so users (and the CLI AI doing an upgrade) can compare
+    the installed version against the repo/release version.
+    """
+    try:
+        return importlib.metadata.version("sill-ensoul")
+    except importlib.metadata.PackageNotFoundError:
+        return "unknown (package not installed as a distribution)"
 
 
 class _CLITarget(TypedDict):
@@ -234,7 +247,11 @@ def init_kb() -> int:
     print("  sill-ensoul-init --print-shell >> <CLI instruction file>")
     print("  sill-ensoul-init --sync-shell          (update existing marked shells)")
     print("  sill-ensoul-init --rebuild-index       (rebuild FTS index for all agents)")
+    print("  sill-ensoul-init --version             (show installed package version)")
     print("(append, don't overwrite) + register `sill-ensoul-mcp` as an MCP server.")
+    print()
+    print("Already installed? To upgrade, point your CLI's AI at UPGRADE.md:")
+    print('  In your CLI, say: "upgrade sill-ensoul from <repo>/UPGRADE.md"')
     print()
     print("=" * 60)
     print('  Done! Restart your CLI, then say "wake up alter-ego" to test.')
@@ -261,7 +278,16 @@ def main() -> int:
         action="store_true",
         help="Rebuild the FTS index for all agents.",
     )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Print the installed sill-ensoul package version and exit.",
+    )
     args = parser.parse_args()
+
+    if args.version:
+        print(_package_version())
+        return 0
 
     if args.print_shell:
         print(_load_shell())

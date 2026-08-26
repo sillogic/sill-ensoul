@@ -78,9 +78,24 @@ sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
 | `sill-ensoul-init --print-shell` | 打印 CLI 无关的薄壳内容，供手动追加到 CLI 指令文件。 |
 | `sill-ensoul-init --sync-shell` | 自动更新已支持 CLI 指令文件里的 sill-ensoul 薄壳段（Claude Code、Zcode、Codex、OpenCode）。 |
 | `sill-ensoul-init --rebuild-index` | 为每个 agent 从 `.md` 权威源重建 SQLite FTS 索引。 |
+| `sill-ensoul-init --version` | 打印已安装包版本（升级前检查用）。 |
 
 已支持的 CLI 指令文件会自动检测；只更新存在且已包含 sill-ensoul 定界标记的文件。
 </details>
+
+---
+
+## 升级
+
+升级已安装的 sill-ensoul 分两部分、三个命令——**绝不碰你的 KB**（升级只更新包代码 + 重新同步薄壳规则，agent 记忆原封不动）：
+
+```bash
+sill-ensoul-init --version                                        # 当前装的版本
+pip install -U "git+https://github.com/sillogic/sill-ensoul.git"  # 或：git pull && pip install -e <repo>
+sill-ensoul-init --sync-shell                                     # 刷新 CLI 指令文件里的薄壳规则
+```
+
+然后重启你的 CLI。完整的机器可读升级意图（安装方式识别、验证、注意事项）在 [UPGRADE.md](UPGRADE.md)——对你的 CLI 说*"帮我升级 sill-ensoul，按 `<repo>`/UPGRADE.md 来"*，剩下的交给它。
 
 ---
 
@@ -154,10 +169,11 @@ python -m tests.run_tests
 ## 深入阅读
 
 - [docs/DESIGN.md](docs/DESIGN.md) — 设计背景：为什么 OKF、为什么 MCP、与 mem0/letta/graphiti 的对比
-- [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D8 + 历史踩坑 H1-H12
+- [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D10 + 历史踩坑 H1-H12
 - [docs/multica.md](docs/multica.md) — 平台集成指南（Multica）：唤醒块模板、降级规则、批量上架模式
 - [WORKFLOW.md](WORKFLOW.md) — CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
 - [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读）
+- [UPGRADE.md](UPGRADE.md) — 给 CLI 的 AI 读的升级意图（机器可读）
 
 ## License
 

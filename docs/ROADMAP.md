@@ -2,7 +2,7 @@
 
 > 这是一份**活文档**，记录 sill-ensoul 在落地"与 CLI、模型供应商解耦的长期记忆系统"过程中的设计决策、已解决问题与已知限制。
 >
-> 阅读顺序：§1（设计原则）→ §2（设计决策 D1-D6）→ §3（已解决问题清单）→ §4（当前状态）。
+> 阅读顺序：§1（设计原则）→ §2（设计决策 D1-D10）→ §3（已解决问题清单）→ §4（当前状态）。
 
 ---
 
@@ -105,6 +105,17 @@
 
 ### D9 — 并发写锁：SQLite 互斥量（三平台同一份代码）
 
+### D10 — 升级方式：意图文件 + pip + 标记同步，KB 永不触碰
+
+- **问题**（SIL-28）：没有标准升级路径。只有首次安装（GitHub 下载源码 → 把 SETUP.md 拖进 AI 对话框 → 按文档装）。发新版后用户只能重来一遍，且重跑 SETUP.md 会**重复追加薄壳块**（它教的是"append, don't overwrite"）。
+- **决策**：升级 = 两个独立部分，各走已有的成熟机制：
+  1. **包代码** → pip（GitHub 路由：`pip install -U git+...`；editable clone 路由：`git pull` + 重跑 `pip install -e`）。
+  2. **薄壳规则** → 复用既有 `--sync-shell`（定界标记**原位替换**，不重复、自动备份）——这是 `SHELL.md` 改版后让各 CLI 指令文件跟上来的唯一机制。
+  3. **KB 是用户数据，永不触碰**；FTS schema 变更由运行时 `PRAGMA user_version` 自动迁移（已有机制）。MCP server 注册指向 `sill-ensoul-mcp` 命令，跨版本存活，只在验证失败时才重注册。
+- **落地物**：新增 `UPGRADE.md`（与 SETUP.md 同模式的机器可读意图文件：两步升级 + 验证 + 注意事项 + 事后报告模板）；`sill-ensoul-init --version`（比对已装 vs 仓库版本的原语）；SETUP.md 补"已装过就进 UPGRADE.md"指针 + 定界标记重复追加防护；README 升级一节。
+- **为什么不做 `sill-ensoul-upgrade` 自动升级脚本**：① pip 自我升级脆弱（进程内升级正在跑的包，Windows 上容易踩文件锁）；② 与项目哲学冲突——SETUP.md 已确立"CLI 的 AI 用自己当前的配置机制自理环境"，升级同样交给它；③ 版本检查需要网络（GitHub API），与项目离线友好的定位不符。用户那句"从 UPGRADE.md 升级"与"从 SETUP.md 安装"摩擦等价，但升级内容明确、安全边界清楚。
+- **状态**：✅ 已落地（SIL-28，v0.2.3+）。
+
 - **决策**：`okf.py` 加 `_agent_lock` context manager，用 SQLite 的 single-writer 事务（`BEGIN IMMEDIATE`）做 per-agent 跨进程互斥量，包住 `append_log` 读改写 / `write_concept` / `_sync_agent_index`。锁文件是**专用**的 `<agent_dir>/.lock.db`，永不被 `os.replace`。
 - **为什么 SQLite 而不是 fcntl/msvcrt**：项目承诺平台无关（win/linux/mac）。`fcntl.flock` + `msvcrt.locking` 双路径是两套代码、两套测试，且 msvcrt 有"锁已存在字节/打开模式/10 次重试"的坑（ROADMAP #12 旧注记）。`sqlite3` 是 stdlib、项目已在用（FTS5），`BEGIN IMMEDIATE` 的 RESERVED 锁在三平台天然就是跨进程互斥量，进程崩溃由事务恢复 + OS 文件锁释放兜底，锁不会残留。锁的代码不需要知道平台是谁 —— 这才叫平台无关。
 - **锁必须加在专用文件上（坑）**：`append_log`/`write_concept` 用 `os.replace` 换目标 inode —— 如果锁加在被写的文件上，第二个进程会锁新 inode，与第一个进程的旧 inode 锁互不相斥，两个进程同时进临界区，锁白加。
@@ -158,6 +169,7 @@
 | ~~6~~ | ~~**改名**~~ | ✅ 代码层统一为 sill-ensoul | 包名 `sill-ensoul`、命令 `sill-ensoul-mcp`/`sill-ensoul-init`、目录 `ensoul/`、环境变量 `ENSOUL_KB`、KB 路径 `ensoul/knowledge` |
 | ~~7~~ | ~~**GitHub 发布**~~ | ✅ 已推 github.com/sillogic/sill-ensoul | v0.1.0 tag 已打，首个公开版本上线 |
 | ~~8~~ | ~~**#12**~~ | ✅ 已修 并发写（okf.py SQLite 互斥锁 D9 + tests/test_concurrent.py） | 跨进程写同一 agent 不再丢更新；三平台同一份代码；确定性语义测试防回归 |
+| ~~9~~ | ~~**SIL-28 升级方式**~~ | ✅ 已落地 标准升级路径（UPGRADE.md + `--version` + `--sync-shell` 复用） | 升级 = 包 + 薄壳两部分；KB 永不触碰；不做自升级脚本（D10） |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作，需要时做 |
 | — | PyPI 发布（可选） | `pip install sill-ensoul` 一行装 | 目前从 GitHub 装；发 PyPI 只加发版动作，不改代码，有需要再做 |
 
