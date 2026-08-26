@@ -78,9 +78,28 @@ After install, `sill-ensoul-init` provides a few maintenance commands:
 | `sill-ensoul-init --print-shell` | Print the CLI-agnostic shell for manual append to a CLI instruction file. |
 | `sill-ensoul-init --sync-shell` | Auto-update sill-ensoul shell segments in supported CLI instruction files (Claude Code, Zcode, Codex, OpenCode). |
 | `sill-ensoul-init --rebuild-index` | Rebuild the SQLite FTS index for every agent from the `.md` source of truth. |
+| `sill-ensoul-init --version` | Print the installed package version (for upgrade checks). |
 
 Supported CLI instruction files are detected automatically; only the ones that exist and already contain sill-ensoul markers are updated.
 </details>
+
+---
+
+## Upgrade
+
+Upgrading an existing install is two parts, three commands — and your KB is
+**never touched** (upgrades update the package code and re-sync the shell rules
+only; your agents' memory stays put):
+
+```bash
+sill-ensoul-init --version                                   # what's installed now
+pip install -U "git+https://github.com/sillogic/sill-ensoul.git"   # or: git pull && pip install -e <repo>
+sill-ensoul-init --sync-shell                                # refresh shell rules in CLI instruction files
+```
+
+Restart your CLI. The full machine-readable intent for the CLI's AI (route
+detection, verification, what-not-to-do) is [UPGRADE.md](UPGRADE.md) — say
+*"upgrade sill-ensoul from `<repo>`/UPGRADE.md"* and the CLI handles it.
 
 ---
 
@@ -154,10 +173,11 @@ Three release tests, all green = core loop works (each builds its own temp KB, r
 ## Dig deeper
 
 - [docs/DESIGN.md](docs/DESIGN.md) — design background: why OKF, why MCP, comparison with mem0/letta/graphiti
-- [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D8 + historical pitfalls H1-H12
+- [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D10 + historical pitfalls H1-H12
 - [docs/multica.md](docs/multica.md) — platform integration guide (Multica): wake-up block template, degradation rules, batch onboarding
 - [WORKFLOW.md](WORKFLOW.md) — CLI-agnostic workflow (wake/recall/distill/skill dispatch)
 - [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI
+- [UPGRADE.md](UPGRADE.md) — machine-readable upgrade intent for the CLI's AI
 
 ## License
 
