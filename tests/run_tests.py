@@ -33,6 +33,7 @@ def main() -> None:
         "tests.test_search",         # H1/H7 检索回归(FTS5 + persona 排除)
         "tests.test_mcp_live",       # MCP 壳层(8 工具)
         "tests.test_cross_project",  # 跨项目记忆端到端
+        "tests.test_concurrent",     # 并发写:跨进程串行化(ROADMAP #12/D9)
     ]
     ok = True
     for t in tests:

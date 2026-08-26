@@ -103,6 +103,14 @@
 - **关键引述**：OKF SPEC 3.1 只保留 `index.md` / `log.md`；4.1 明确"Producers MAY include any additional keys"，消费者"MUST tolerate unknown types gracefully"。因此 `AGENT.md` 作为带 `type: Profile` 的 concept 是合法扩展。
 - **状态**：✅ 已确认合规，无需重构文件结构。
 
+### D9 — 并发写锁：SQLite 互斥量（三平台同一份代码）
+
+- **决策**：`okf.py` 加 `_agent_lock` context manager，用 SQLite 的 single-writer 事务（`BEGIN IMMEDIATE`）做 per-agent 跨进程互斥量，包住 `append_log` 读改写 / `write_concept` / `_sync_agent_index`。锁文件是**专用**的 `<agent_dir>/.lock.db`，永不被 `os.replace`。
+- **为什么 SQLite 而不是 fcntl/msvcrt**：项目承诺平台无关（win/linux/mac）。`fcntl.flock` + `msvcrt.locking` 双路径是两套代码、两套测试，且 msvcrt 有"锁已存在字节/打开模式/10 次重试"的坑（ROADMAP #12 旧注记）。`sqlite3` 是 stdlib、项目已在用（FTS5），`BEGIN IMMEDIATE` 的 RESERVED 锁在三平台天然就是跨进程互斥量，进程崩溃由事务恢复 + OS 文件锁释放兜底，锁不会残留。锁的代码不需要知道平台是谁 —— 这才叫平台无关。
+- **锁必须加在专用文件上（坑）**：`append_log`/`write_concept` 用 `os.replace` 换目标 inode —— 如果锁加在被写的文件上，第二个进程会锁新 inode，与第一个进程的旧 inode 锁互不相斥，两个进程同时进临界区，锁白加。
+- **两层各管一件事**：锁管**串行**（不丢更新），`_atomic_write_text` 管**崩溃**（不留半截文件）。`_sync_agent_index` 也要包：SQLite busy_timeout 默认 0，两进程同时 sync 同一 `index.db` 会报 `database is locked`。
+- **状态**：✅ 已落地。确定性语义测试（`tests/test_concurrent.py` A1/A2：持锁期间争抢必须 OperationalError、释放后立即成功）+ 并发压力测试（B3：N 进程并发 append 断言日志条数 = N；B4：并发写同一 concept 不撕裂）。
+
 ---
 
 ## 3. 问题清单
@@ -125,15 +133,9 @@
 | #9 ✅ | server 绑死 cwd | `pyproject.toml` 定义 `sill-ensoul-mcp` 控制台命令 + `pip install -e .` | 任意 cwd 直接 `sill-ensoul-mcp` |
 | #10 ✅ | 三场景规则（自我认知/项目查询/身份保持） | 写入 WORKFLOW.md §1.1/§2.1/§2.2 | 身份保持是"软身份"换"CLI 无关"的代价，缓解不完美 |
 | #11 ✅ | search/agent_index 每次查询全量读文件 | 扩展 FTS `meta` 表缓存 title/desc/tags/type/body_preview；查询走索引，未变更文件不读 | 保持 OKF 文件为唯一权威源；`.fts/index.db` 是派生索引 |
+| #12 ✅ | 并发写同一 agent 丢数据（append_log 读改写丢失 / 同 concept 后覆盖先） | D9 `_agent_lock`：SQLite 互斥量（per-agent `.lock.db`，`BEGIN IMMEDIATE`，三平台同一份代码）串行化 append_log/write_concept/_sync_agent_index；原子写保留（锁管串行、原子写管崩溃）；`tests/test_concurrent.py`（确定性互斥语义测试 + N 进程并发 append 断言条数=N） | 锁必须加在永不被 replace 的专用文件上；SQLite single-writer 天然是跨平台互斥量，无 fcntl/msvcrt 分支 |
 
 ### 已知限制（不修，已决策）
-
-#### #12 — 🟢 并发写同一 agent 的 expertise 会丢数据
-
-- **风险**：`wiki_write_concept` 非原子覆盖写；`append_log` 是 read-modify-write。两进程同时写同一 concept → 后覆盖先，无报错。
-- **实际量级**：窄。`projects/` 天然隔离（每项目独立文件），热点只在 `expertise/`（跨项目蒸馏共享区），而蒸馏本就是低频操作。
-- **方案（按工作量）**：① 文件锁（`fcntl`/`msvcrt`）顺序化；② 原子写（临时文件 + `os.replace`）— 已做；③ 版本号/冲突检测（过度工程）。
-- **为什么不修**：核心闭环已验证；文件锁 Windows 有坑；原子写已缓解单进程崩溃。等真出现并发写再处理。
 
 #### #13 — 🟢 server.py 工具数增长后应按职责拆分
 
@@ -155,6 +157,7 @@
 | ~~5~~ | ~~#2~~ | ✅ 自动沉淀已落地（auto + notify-after，纯文档驱动） | 解决"懒得记"，守住质量门禁；**全自动 sleeptime 已否决，auto + notify-after 是终态设计** |
 | ~~6~~ | ~~**改名**~~ | ✅ 代码层统一为 sill-ensoul | 包名 `sill-ensoul`、命令 `sill-ensoul-mcp`/`sill-ensoul-init`、目录 `ensoul/`、环境变量 `ENSOUL_KB`、KB 路径 `ensoul/knowledge` |
 | ~~7~~ | ~~**GitHub 发布**~~ | ✅ 已推 github.com/sillogic/sill-ensoul | v0.1.0 tag 已打，首个公开版本上线 |
+| ~~8~~ | ~~**#12**~~ | ✅ 已修 并发写（okf.py SQLite 互斥锁 D9 + tests/test_concurrent.py） | 跨进程写同一 agent 不再丢更新；三平台同一份代码；确定性语义测试防回归 |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作，需要时做 |
 | — | PyPI 发布（可选） | `pip install sill-ensoul` 一行装 | 目前从 GitHub 装；发 PyPI 只加发版动作，不改代码，有需要再做 |
 

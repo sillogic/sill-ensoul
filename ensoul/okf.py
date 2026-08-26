@@ -17,8 +17,10 @@ from __future__ import annotations
 
 import os
 import re
+import sqlite3
 import sys
 import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -113,6 +115,41 @@ def _atomic_write_text(path: Path, text: str, encoding: str = "utf-8") -> None:
         except OSError:
             pass
         raise
+
+
+@contextmanager
+def _agent_lock(agent_id: str, timeout: float = 10.0):
+    """Per-agent cross-process mutex via SQLite's single-writer semantics.
+
+    Same code runs on win/linux/mac: sqlite3 is stdlib everywhere, so there is
+    no fcntl/msvcrt platform branch (ROADMAP #12 / D9). BEGIN IMMEDIATE takes
+    SQLite's RESERVED lock, which is a cross-process mutex on all platforms;
+    `timeout` makes contending writers wait instead of failing immediately. A
+    crash inside the critical section is rolled back by SQLite and the file
+    lock released by the OS, so the mutex can never go stale.
+
+    The lock file <agent_dir>/.lock.db is DEDICATED and never os.replace'd.
+    Locking the file being written would be broken: append_log/write_concept
+    replace the target inode, so a second process would lock the NEW inode
+    while the first still holds the OLD one — two locks, no exclusion.
+
+    NOT reentrant: acquiring the same agent's lock from inside its own critical
+    section would self-deadlock (2nd BEGIN IMMEDIATE blocks until the 10s
+    timeout). No okf code path nests, and the MCP shell calls tools
+    sequentially — keep it that way.
+    """
+    agent_dir = _agent_dir(agent_id)
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(agent_dir / ".lock.db"), timeout=timeout)
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        yield
+        conn.commit()
+    except BaseException:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def list_agents() -> list[dict]:
@@ -224,7 +261,10 @@ def _sync_agent_index(agent_id: str) -> None:
     """Scan the agent's OKF files and update the SQLite index incrementally.
 
     Only reads files that are new or changed (by mtime + size). Files with
-    malformed frontmatter are skipped with a warning.
+    malformed frontmatter are skipped with a warning. Serialized by
+    _agent_lock: two processes syncing the same index.db concurrently would
+    otherwise hit SQLite's default busy_timeout=0 and raise
+    "database is locked" (ROADMAP #12).
     """
     from . import fts
 
@@ -232,47 +272,48 @@ def _sync_agent_index(agent_id: str) -> None:
     if not base.exists():
         return
 
-    concepts: list[dict] = []
-    for p in _iter_concepts(agent_id):
-        rel = _concept_id_from_path(base, p)
-        stat = p.stat()
-        # Try the lightweight cache first; only read+parse if changed.
-        cached = fts.get_meta(base, rel)
-        if (cached and
-            abs(cached.get("mtime", 0) - stat.st_mtime) < 0.001 and
-            cached.get("size", -1) == stat.st_size):
+    with _agent_lock(agent_id):
+        concepts: list[dict] = []
+        for p in _iter_concepts(agent_id):
+            rel = _concept_id_from_path(base, p)
+            stat = p.stat()
+            # Try the lightweight cache first; only read+parse if changed.
+            cached = fts.get_meta(base, rel)
+            if (cached and
+                abs(cached.get("mtime", 0) - stat.st_mtime) < 0.001 and
+                cached.get("size", -1) == stat.st_size):
+                concepts.append({
+                    "concept_id": rel,
+                    "title": cached["title"],
+                    "description": cached["description"],
+                    "tags": cached["tags"],
+                    "type": cached["type"],
+                    "body": cached.get("body_preview", ""),
+                    "mtime": stat.st_mtime,
+                    "size": stat.st_size,
+                })
+                continue
+
+            try:
+                text = p.read_text(encoding="utf-8")
+                fm, body = parse_markdown(text)
+            except yaml.YAMLError as e:
+                import warnings
+                warnings.warn(f"skipping malformed OKF frontmatter in {p}: {e}")
+                continue
+            tags = fm.get("tags") or []
             concepts.append({
                 "concept_id": rel,
-                "title": cached["title"],
-                "description": cached["description"],
-                "tags": cached["tags"],
-                "type": cached["type"],
-                "body": cached.get("body_preview", ""),
+                "title": str(fm.get("title", "")),
+                "description": str(fm.get("description", "")),
+                "tags": " ".join(str(t) for t in tags),
+                "body": body,
                 "mtime": stat.st_mtime,
                 "size": stat.st_size,
+                "type": str(fm.get("type", "")),
             })
-            continue
 
-        try:
-            text = p.read_text(encoding="utf-8")
-            fm, body = parse_markdown(text)
-        except yaml.YAMLError as e:
-            import warnings
-            warnings.warn(f"skipping malformed OKF frontmatter in {p}: {e}")
-            continue
-        tags = fm.get("tags") or []
-        concepts.append({
-            "concept_id": rel,
-            "title": str(fm.get("title", "")),
-            "description": str(fm.get("description", "")),
-            "tags": " ".join(str(t) for t in tags),
-            "body": body,
-            "mtime": stat.st_mtime,
-            "size": stat.st_size,
-            "type": str(fm.get("type", "")),
-        })
-
-    fts.sync_index(base, concepts)
+        fts.sync_index(base, concepts)
 
 
 def search(agent_id: str, query: str, limit: int = 5) -> list[dict]:
@@ -330,27 +371,33 @@ def write_concept(agent_id: str, concept_id: str, type: str,
         fm.update(extra)
 
     f = _agent_dir(agent_id) / f"{concept_id}.md"
-    _atomic_write_text(f, serialize(fm, body))
-    return read_concept(agent_id, concept_id)
+    # Lock serializes concurrent writers to the same concept (last-writer-wins
+    # deterministically); the atomic write below still guards against torn
+    # files on crash. Two layers, two jobs (ROADMAP #12/D9).
+    with _agent_lock(agent_id):
+        _atomic_write_text(f, serialize(fm, body))
+        return read_concept(agent_id, concept_id)
 
 
 def append_log(agent_id: str, action: str, detail: str) -> dict:
     """Append one entry to the agent's log.md under today's ISO date group.
-    Uses atomic read-modify-write so concurrent callers are less likely to
-    corrupt the file (ROADMAP #11)."""
+    The read-modify-write runs under _agent_lock so concurrent callers cannot
+    lose an entry (ROADMAP #12); the atomic write still guards torn files on
+    crash. Two layers, two jobs."""
     f = _agent_dir(agent_id) / "log.md"
     today = datetime.now().astimezone().strftime("%Y-%m-%d")
     entry = f"* **{action}**: {detail}"
-    text = f.read_text(encoding="utf-8") if f.exists() else "# Directory Update Log\n"
-    if "# Directory Update Log" not in text:
-        text = "# Directory Update Log\n\n" + text
-    marker = f"## {today}"
-    if marker in text:
-        text = text.replace(marker, f"{marker}\n{entry}", 1)
-    else:
-        text = text.replace("# Directory Update Log\n",
-                            f"# Directory Update Log\n\n{marker}\n{entry}\n", 1)
-    _atomic_write_text(f, text)
+    with _agent_lock(agent_id):
+        text = f.read_text(encoding="utf-8") if f.exists() else "# Directory Update Log\n"
+        if "# Directory Update Log" not in text:
+            text = "# Directory Update Log\n\n" + text
+        marker = f"## {today}"
+        if marker in text:
+            text = text.replace(marker, f"{marker}\n{entry}", 1)
+        else:
+            text = text.replace("# Directory Update Log\n",
+                                f"# Directory Update Log\n\n{marker}\n{entry}\n", 1)
+        _atomic_write_text(f, text)
     return {"agent_id": agent_id, "date": today, "entry": entry}
 
 
