@@ -7,7 +7,9 @@
 >
 > **怎么用**：把下面 `## 分身绑定` 起的整块内容 append 到目标 agent 的 instructions
 > （`multica agent update <agent-id> --instructions "<原文 + 本块>"`，**append 不覆盖**），
-> 替换两处占位符即可。完整流程见 [docs/multica.md](../../docs/multica.md)。
+> 替换两处占位符即可。首次安装场景（SETUP.md Multica adaptation）在 `multica agent create
+> --instructions` 里直接带上本块（`<分身id>` = `alter-ego`）即可。
+> 完整流程见 [docs/multica.md](../../docs/multica.md)。
 
 ---
 

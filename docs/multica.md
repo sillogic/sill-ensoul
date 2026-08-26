@@ -85,12 +85,20 @@ append 进 instructions、替换 `<分身id>` 占位符即可，一次 `multica 
 AGENT.md 的 title/description>"` —— 让平台侧「看起来就是」那个分身（成员在 UI 里一眼
 认出）。分身后续 persona 更新时按需再同步。
 
-### 4.4 通过 SETUP.md 初始化（决策 7）
+### 4.4 通过 SETUP.md 初始化（决策 7 + SIL-29 细化）
 
 老用户把 SETUP.md 直接丢给 multica agent 对话即可初始化，无需专门 md（SIL-27 确认）。
-SETUP.md 内「Multica adaptation」一节覆盖：平台 MCP 注册 / shell append 进 instructions /
-改名默认分身 `alter-ego` / 验证。老用户更贴合 4.2 的绑定 skill（按领域匹配已有分身），
-非一律 alter-ego。
+SETUP.md 内「Multica adaptation」一节覆盖：平台 MCP 注册 / **创建默认分身 `alter-ego` 的
+agent 并绑定**（唤醒块 + skill，SIL-29 起取代「改名接收 agent」）/ 验证。
+
+- **首次安装（SIL-29）**：接收 SETUP.md 的 agent **不改名**、保持自己的 Helper 身份，负责
+  **创建**一个名为 `alter-ego` 的新 agent —— instructions = 平台基础（复制接收 agent 的
+  instructions）+ 唤醒块（`<分身id>` = `alter-ego`，模板见
+  [shells/multica/AGENTS.md](../shells/multica/AGENTS.md)），runtime 选能调 ensoul MCP 工具
+  的那个（Route A 任意 / Route B pi runtime），挂 `ensoul-multica-binding` skill（若
+  workspace 已存在）。用户在 workspace 里直接与 `alter-ego` agent 对话即开始使用。
+- **老用户**：更贴合 4.2 的绑定 skill（按领域匹配已有分身 1:1 绑定 + name/description
+  同步），非一律 alter-ego。
 
 ## 5. 批量上架模式（决策 8）：分身 → agent + 项目
 
