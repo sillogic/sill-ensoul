@@ -39,15 +39,50 @@ ensoul 与 Multica **无结构性冲突，分层互补**：
 
 ## 3. MCP 接入路径（文档 = 现实，2026-08 对齐）
 
-两条路径，**当前实装验证的是 pi 扩展路线**；平台 MCP 库路线是规划目标（SIL-26 落地）：
+两条路径，**平台库路线 = 正式主路径（SIL-26 定案）**；pi 扩展路线 = Pi runtime 的当前交付通道 + CLI 本地兑底。双路径共存由构造保证兼容（见 §3.1）：
 
 | 路径 | 状态 | 说明 |
 |---|---|---|
-| **pi 扩展路线**（已验证） | ✅ 实装 | `~/.pi/agent/settings.json` → `cmd /c sill-ensoul-mcp`，经 `extensions/mcp-bridge.ts` 把 8 个 ensoul 工具暴露给 run 内 agent |
-| **平台 MCP 库路线**（规划） | ⏳ 目标 | `multica workspace mcp add` + `multica agent mcp add`，任何 runtime CLI 可用；2026-08-26 复核 `multica workspace mcp list` 仍为 `[]`，且本机 pip 安装版本（v0.2.1）滞后于仓库（v0.2.3）—— 实装前需先升级 |
+| **平台 MCP 库路线**（主路径） | ✅ 设计定案 · ⏳ 待 owner 注册 | `multica workspace mcp add` + `multica agent mcp add`，任何 runtime CLI 可用。server 条目（`cmd /c sill-ensoul-mcp`）已实测握手通过（initialize + 8 工具 + 调用）；**`workspace mcp add` 是 admin/owner 操作，agent run 的 task-scoped token 会被拒** —— 注册需 workspace owner 执行（UI 或自己的 CLI），命令见下 |
+| **pi 扩展路线**（兑底/当前交付） | ✅ 实装 | `~/.pi/agent/settings.json` → `cmd /c sill-ensoul-mcp`，经 `extensions/mcp-bridge.ts` 把 8 个 ensoul 工具暴露给 run 内 agent（Pi runtime 当前实际交付通道；pi 无原生 MCP） |
+
+**注册命令（owner 执行一次；SIL-26 实测权限模型）**：
+
+```bash
+# 条目（已实测：initialize OK + 8 工具 + 调用）
+# {"type":"stdio","command":"cmd","args":["/c","sill-ensoul-mcp"]}
+multica workspace mcp add sill-ensoul --server-config-file ./entry.json
+multica agent mcp add <agent-id> <server-id>   # server-id 取 workspace mcp list
+```
+
+版本对齐（SIL-26 复核）：pip 安装 `sill-ensoul` v0.3.0 == 仓库 v0.3.0，无漂移。
 
 **新人注意**：SETUP.md 的「Multica adaptation」一节现按双路径写（平台注册 + pi 扩展
 均已说明）；装好后用 `multica agent get` 确认 agent 能调 `list_agents` / `agent_index`。
+
+### 3.1 三类用户兼容性 + 嵌套 CLI 约定（SIL-26 设计输入，2026-08）
+
+用户追问「只用 multica / 只用 CLI / 两者都用」三类用户怎么兼容，接受两处都装 ensoul
+MCP，但担心「装了 ensoul 的 multica 调装了 ensoul 的 CLI」出问题。**结论：兼容性由
+构造保证，无需为任何一类做专门分支或新代码**：
+
+- **数据完整性层 = 已解决（非风险）**：server.py 完全无状态（8 工具全部显式传
+  agent_id，无全局 session/active-agent，stdio 不占端口）—— N 个 MCP 客户端 = N 个
+  独立进程读写同一文件库。写路径全部在 D9 锁 + 原子写内（每 agent 目录 `.lock.db` +
+  `BEGIN IMMEDIATE` 跨进程互斥 + `_atomic_write_text` os.replace），并发写被串行化，
+  不会半截/丢更新/坏索引；search 前先同步索引且索引维护在锁内；init 幂等（已存在
+  skip）。
+- **纪律层 = 真正的剩余摩擦点**（锁防损坏、防不了两个「心智」以同一 agent_id 同时
+  写作），两条约定：
+  1. **嵌套一层写**：multica runtime 内嵌套的 CLI 只当执行工具，记忆层归外层 agent
+     管（已持 8 工具）；嵌套会话按各 CLI 机制禁用 ensoul（配置动作，非代码分叉）。嵌
+     套确实要用 → 换不同 agent_id，或接受去重（蒸馏规则先 search 再写天然防重）；
+     `ENSOUL_KB` 可整体切库做完全隔离，但那是隔离非共享，一般不要。
+  2. **同一命令注册**：平台侧与 CLI 侧用同一注册命令（`cmd /c sill-ensoul-mcp`），
+     一台机器一个 server 版本一个 KB，消灭版本漂移。
+- **三类用户落法**：只用 multica = 平台库注册 + agent 分配（工具直调）；只用 CLI =
+  各 CLI 自配（现状）；两者都用 = 同一二进制同一 KB 两处配置共存，错开使用零冲突、
+  同时跑（autopilot + 本地 CLI）有锁兑底，守「嵌套一层写」约定即可。
 
 ## 4. 分身绑定（决策 4/5/6）
 

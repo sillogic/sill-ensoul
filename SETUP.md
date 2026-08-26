@@ -133,17 +133,30 @@ agent — it keeps its own identity.
 1. **Register the MCP server — two routes, use the one actually set up on this
    runtime** (docs and reality must match — verify, don't assume):
 
-   - **Route A — platform MCP library (recommended destination; not yet the
-     installed reality on the reference setup)**: add `sill-ensoul` to the
+   - **Route A — platform MCP library (recommended destination; registration is
+     admin/owner-only — an agent run cannot do it)**: add `sill-ensoul` to the
      workspace MCP library (`multica workspace mcp add ...`), then assign it to
      this agent (`multica agent mcp add <agent-id> ...`). The platform wires
      the server for every runtime — no `~/.claude/`, no `.mcp.json`. As of
-     2026-08 the reference Multica setup has NOT done this yet
-     (`multica workspace mcp list` returns `[]`); platform registration is
-     tracked as follow-up work. Before registering, make sure the installed
-     package is current (`pip show sill-ensoul` vs the repo version — a stale
-     binary wires the wrong version). If you see `sill-ensoul` in
-     `multica workspace mcp list`, prefer this route.
+     2026-08 (SIL-26) the reference setup has the entry **verified but not yet
+     registered**: `multica workspace mcp add` is denied for an agent run's
+     task-scoped token (admin/owner only) — the **workspace owner** must run the
+     registration (UI or their own CLI), then the agent can do the assignment.
+     The verified server entry (handshake-tested: initialize OK + 8 tools +
+     one tool call) is:
+     ```json
+     {
+       "type": "stdio",
+       "command": "cmd",
+       "args": ["/c", "sill-ensoul-mcp"]
+     }
+     ```
+     `multica workspace mcp add sill-ensoul --server-config-file <entry.json>`,
+     then `multica agent mcp add <agent-id> <server-id>` (server id from
+     `multica workspace mcp list`). Installed package parity (2026-08-26
+     SIL-26): pip `sill-ensoul` v0.3.0 == repo v0.3.0 — no stale-binary drift.
+     If you see `sill-ensoul` in `multica workspace mcp list`, prefer this
+     route.
    - **Route B — pi extension (the verified, implemented path as of 2026-08)**: pi
      has no built-in MCP support; the `mcp-bridge.ts` extension in
      `~/.pi/agent/extensions/` exposes stdio MCP servers declared in
