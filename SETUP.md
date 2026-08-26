@@ -110,6 +110,29 @@ If search feels slow or returns stale results after the user manually edits `.md
 files outside the tools, run `sill-ensoul-init --rebuild-index` to rebuild the
 local SQLite FTS index from the markdown source of truth.
 
+## Multica adaptation (this file arrived via a Multica conversation)
+
+The user may have dropped this file into a **Multica conversation** instead of a
+CLI. The intent is the same — wire sill-ensoul into YOU — but the adaptation
+targets are Multica's own, not a per-CLI config:
+
+1. **Register the MCP server via the platform, not per-CLI config**: add
+   `sill-ensoul` to the workspace MCP library (`multica workspace mcp add ...`),
+   then assign it to this agent (`multica agent mcp add <agent-id> ...`). The
+   platform wires the server for every runtime — no `~/.claude/`, no `.mcp.json`.
+2. **Append the shell to this agent's instructions**: this agent's "instruction
+   file" is its `instructions` field. Append the ensouler shell (output of
+   `sill-ensoul-init --print-shell`) to the existing instructions — **append, don't
+   overwrite** — and write back with `multica agent update <agent-id>
+   --instructions "<full text>"`.
+3. **Rename this agent to the default 分身 name**: Multica agents and ensoul 分身
+   are bound 1:1. After setup, change this agent's name to the initial default
+   分身 name **`alter-ego`** (the digital twin `sill-ensoul-init` creates):
+   `multica agent update <agent-id> --name "alter-ego"`.
+4. **Verify**: `multica agent get <agent-id> --output json` shows name
+   `alter-ego`, instructions contain the ensouler shell, and the agent can call
+   the `list_agents` / `agent_index` tools.
+
 ## What NOT to do
 
 - Don't hardcode paths assuming a specific CLI (e.g. don't assume `~/.claude/`).
