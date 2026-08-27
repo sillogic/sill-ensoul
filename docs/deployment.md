@@ -132,15 +132,15 @@ cd /opt/sill-ensoul && tar -xf knowledge.tar && ls knowledge/agents/
 
 ---
 
-## 四、客户端切换（各 CLI 指向远程）
+## 四、客户端接入（各 CLI 指向远程）
 
-不手敲命令 —— **一份"投喂提示词"适用所有 CLI**：`deploy/cli-setup/switch-to-remote.md`。文件里 A–D 按 CLI 分节（A Claude Code streamable-http 原生；B Codex desktop / C zcode / D 其他 CLI 用 `npx mcp-remote` stdio↔HTTP 桥），把文件内容整个丢给对应 CLI，它会先判断自己是哪类、只做自己那一节，自己读配置、自己改、自己验证。
+不手敲命令 —— **一份"投喂提示词"适用所有 CLI**：`deploy/cli-setup/cli-remote.md`。文件里 A–D 按 CLI 分节（A Claude Code streamable-http 原生；B Codex desktop / C zcode / D 其他 CLI 用 `npx mcp-remote` stdio↔HTTP 桥），把文件内容整个丢给对应 CLI，它会先判断自己是哪类、只做自己那一节，自己读配置、自己改、自己验证。
 
-用法三步：① 打开目标 CLI 的聊天窗口；② **先把文件复制出仓库再改**（文件在公开仓库里，直接改会在 `git add .` 提交时泄露；`cp deploy/cli-setup/switch-to-remote.md ~/switch-to-remote.md`，Windows 用 `Copy-Item deploy\cli-setup\switch-to-remote.md $HOME\switch-to-remote.md`），在副本上把 `<服务器公网IP>` / `<端口>` / `<TOKEN>` 三个占位符换成真实值（token 在服务器 `/etc/sill-ensoul/env` 里）；③ 把整个文件内容粘贴给它，用完删除副本。仓库内原文件始终保持占位符。
+用法三步：① 打开目标 CLI 的聊天窗口；② **先把文件复制出仓库再改**（文件在公开仓库里，直接改会在 `git add .` 提交时泄露；`cp deploy/cli-setup/cli-remote.md ~/cli-remote.md`，Windows 用 `Copy-Item deploy\cli-setup\cli-remote.md $HOME\cli-remote.md`），在副本上把 `<服务器公网IP>` / `<端口>` / `<TOKEN>` 三个占位符换成真实值（token 在接入卡上；服务器 `/etc/sill-ensoul/env` 里是 `ENSOUL_MCP_TOKEN`）；③ 把整个文件内容粘贴给它，用完删除副本。仓库内原文件始终保持占位符。
 
 要点（提示词里已带，这里提醒）：
 - server 名保持 `sill-ensoul` 不变，只是把注册从 stdio 换成 HTTP；
-- **mcp-remote 桥接命令必带 `--allow-http --transport http-only`**（非 HTTPS 地址 mcp-remote 默认拒绝；默认 http-first 的 SSE 回退探测与 FastMCP session 管理冲突 → 400 Missing session ID，已实测，见 switch-to-remote.md 顶部公共参数说明）；
+- **mcp-remote 桥接命令必带 `--allow-http --transport http-only`**（非 HTTPS 地址 mcp-remote 默认拒绝；默认 http-first 的 SSE 回退探测与 FastMCP session 管理冲突 → 400 Missing session ID，已实测，见 cli-remote.md 顶部公共参数说明）；
 - 改之前先把旧注册备份；
 - **改完必须完全退出该 CLI 再重开**（配置启动时加载，不热加载）；
 - 不要把填了真实值的提示词文件提交进任何 git 仓库（一律在仓库外副本上改）。
@@ -215,7 +215,7 @@ KB 不在默认位置时加 `--kb <路径>`（或设 `ENSOUL_KB`）。
 | 环境变量文件 | `/etc/sill-ensoul/env`（root-only, chmod 600） |
 | systemd unit | `deploy/sill-ensoul-http.service` |
 | 环境变量模板 | `.env.example` |
-| 客户端提示词 | `deploy/cli-setup/switch-to-remote.md` |
+| 客户端提示词 | `deploy/cli-setup/cli-remote.md` |
 | KB 根 | `ENSOUL_KB`，示例 `/opt/sill-ensoul/knowledge` |
 | 源码 | https://github.com/sillogic/sill-ensoul （从 git 装，未发布 PyPI） |
 
