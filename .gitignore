@@ -29,3 +29,9 @@ docs/openclaw-vs-hermes-report.md
 .workbuddy/
 skills-lock.json
 tools/
+
+# KB 迁移打包产物/私人记忆归档 —— 绝不进仓库（含敏感信息）
+*.tar.gz
+*.tgz
+ensoul-knowledge-*
+knowledge*.tar*
