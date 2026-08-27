@@ -1,5 +1,15 @@
 # 任务：把 sill-ensoul MCP 从本地 stdio 切换到远程 HTTP 服务器
 
+> ⚠️ **人类先读：别直接改这个文件！**
+>
+> 本文件在公开 git 仓库里。**不要在仓库内直接替换占位符**——填了真实 IP/端口/token 后，下次 `git add .` 提交就会把它带进历史并推送出去，等于公开泄露。
+>
+> 正确做法：**先把文件复制到仓库外，在副本上填值，粘贴完删除副本**：
+> - Windows（PowerShell）：`Copy-Item deploy\cli-setup\switch-to-remote.md $HOME\switch-to-remote.md` → 改 `$HOME\switch-to-remote.md` → 用完 `Remove-Item $HOME\switch-to-remote.md`
+> - Linux / macOS：`cp deploy/cli-setup/switch-to-remote.md ~/switch-to-remote.md` → 改 `~/switch-to-remote.md` → 用完 `rm ~/switch-to-remote.md`
+>
+> 副本在仓库目录之外，git 永远看不见它，物理上不可能被提交。下面这份文件里仍是占位符，供直接粘贴给 CLI。
+
 你是本机 CLI。请帮我完成一次 sill-ensoul MCP 配置切换：**自己动手改配置、自己验证，不要只给我命令让我执行。**
 
 ## 目标服务器（已确认可连）
@@ -93,5 +103,5 @@ startup_timeout_ms = 15000
 
 - **必须完全退出本 CLI 再重新打开**，新会话才会用新配置（配置启动时加载，不热更新）。
 - 重启后在会话里调 `agent_index` / `wiki_search` 能通 = 切换成功。
-- 不要把 token 写进任何会被 git 提交的文件。
+- 不要把 token / IP / 端口写进任何会被 git 提交的文件：填了真实值的提示词文件一律在**仓库外的副本**上改（见文件开头），用完删除。
 - 顺序别反：先确认服务器服务在跑（`curl` 返回 401）、KB 已迁移，再切配置。

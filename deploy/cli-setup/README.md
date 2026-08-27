@@ -5,8 +5,15 @@
 
 ## 用法（三步）
 
+> ⚠️ **先复制出仓库再填值**：`switch-to-remote.md` 在公开 git 仓库里，直接替换占位符后一旦 `git add .` 提交就会泄露真实 IP/端口/token。**先复制一份到仓库外**：
+>
+> - Windows（PowerShell）：`Copy-Item deploy\cli-setup\switch-to-remote.md $HOME\switch-to-remote.md`
+> - Linux / macOS：`cp deploy/cli-setup/switch-to-remote.md ~/switch-to-remote.md`
+>
+> 在副本上填值，用完删除副本（`Remove-Item $HOME\switch-to-remote.md` / `rm ~/switch-to-remote.md`）。仓库内原文件始终保持占位符。
+
 1. 打开目标 CLI 的聊天窗口。
-2. 把 `switch-to-remote.md` 里的三个占位符替换成真实值：
+2. 在**仓库外的副本**上把三个占位符替换成真实值：
    - `<服务器公网IP>` → 你的 ECS 公网 IP
    - `<端口>` → `ENSOUL_MCP_PORT`（默认 `8930`，没改就是它）
    - `<TOKEN>` → 服务器 `/etc/sill-ensoul/env` 里 `ENSOUL_MCP_TOKEN` 的值
@@ -19,5 +26,5 @@
 - server 名保持 `sill-ensoul` 不变，只把注册从 stdio 换成 HTTP；
 - 改之前先备份旧注册（备份路径会在对话里告诉你）；
 - **改完必须完全退出该 CLI 再重开** —— 配置启动时加载，不热更新；
-- 不要把 token 提交进任何 git 仓库；
+- 不要把填了真实值的提示词文件提交进任何 git 仓库（一律在仓库外副本上改）；
 - 顺序别反：先确认服务器 KB 已迁移、服务已起（`curl` 返回 401），再切客户端。
