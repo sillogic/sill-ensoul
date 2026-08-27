@@ -11,7 +11,11 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "sillogic" }]
 dependencies = [
-    "mcp>=1.2",
+    # 上界 <2：mcp 2.x 把 FastMCP 改名 MCPServer、删掉 mcp.server.fastmcp 模块（server.py / http.py
+    # 都按 1.x API 写）。不钉上界的话，今天新装会拉到 mcp 2.x，sill-ensoul-mcp / sill-ensoul-http
+    # 一启动就 ModuleNotFoundError（SIL-7 部署现场实测踩到）。迁移到 mcp 2.x 是后续任务（见
+    # docs/ROADMAP.md D11 已知限制），迁移完再放开上界。
+    "mcp>=1.2,<2",
     "pyyaml>=6.0",
 ]
 

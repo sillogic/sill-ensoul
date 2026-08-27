@@ -147,6 +147,11 @@
   "sill-ensoul[http]"`），stdio 安装保持零额外依赖。
 - **测试**：`tests/test_http_live.py`（fail-closed + 401 门禁 + 真实 uvicorn/官方 MCP
   client 端到端），已纳入 `run_tests.py`。
+- **依赖约束**：`pyproject.toml` 钉 `mcp>=1.2,<2`。mcp 2.x 把 `FastMCP` 改名 `MCPServer`、
+  删掉 `mcp.server.fastmcp` 模块，http.py/server.py 都按 1.x API 写（SIL-7 部署现场踩到：
+  新装拉到 mcp 2.x，`sill-ensoul-http --help` 直接 ModuleNotFoundError）。迁移到 mcp 2.x 是
+  后续任务：改用 `mcp.server.mcpserver.MCPServer` + 核对 streamable HTTP/鉴权中间件 API
+  差异，迁移完再放开上界。
 - **状态**：✅ 已落地（SIL-7，v0.4.0）。
 
 ---

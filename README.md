@@ -148,10 +148,16 @@ Core loop: **wake** (load persona + knowledge map) → **recall** (search releva
 Run the **same 8 tools** as a Streamable HTTP MCP server on any machine (VPS / home server / tailnet) so multiple machines share **one** knowledge base. Every request is gated by a static **Bearer token** (SIL-7 / D11) — single-tenant today, with an identity→KB-root seam for future multi-tenancy.
 
 ```bash
-pip install "sill-ensoul[http]"            # stdio installs stay zero-extra-dep
+pip install "sill-ensoul[http] @ git+https://github.com/sillogic/sill-ensoul.git"   # not on PyPI yet
+# or clone then: pip install ".[http]"  (quote the bracket — `.[http]` unquoted is not valid bash)
 ENSOUL_MCP_TOKEN=$(openssl rand -hex 32)   # or: python -c "import secrets;print(secrets.token_hex(32))"
 ENSOUL_MCP_TOKEN=... sill-ensoul-http      # default bind 0.0.0.0:8930
 ```
+
+> **Dependency pin**: the package requires `mcp>=1.2,<2` — mcp 2.x renamed `FastMCP` to
+> `MCPServer` and removed the `mcp.server.fastmcp` module, which breaks both `sill-ensoul-mcp`
+> and `sill-ensoul-http` at startup. The upper bound is baked into `pyproject.toml`, so a fresh
+> install resolves mcp 1.x automatically (migration to mcp 2.x is tracked in D11).
 
 - **Fail-closed**: the server **refuses to start without `ENSOUL_MCP_TOKEN`** — an unauthenticated remote server is exactly what this is for.
 - Optional: `ENSOUL_MCP_HOST` / `ENSOUL_MCP_PORT` env overrides (or `--host` / `--port`). The KB root is still `ENSOUL_KB` / the platform default.
