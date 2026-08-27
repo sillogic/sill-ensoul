@@ -134,14 +134,7 @@ cd /opt/sill-ensoul && tar -xf knowledge.tar && ls knowledge/agents/
 
 ## 四、客户端切换（各 CLI 指向远程）
 
-不手敲命令 —— **每个 CLI 一份"投喂提示词"**，把文件内容整个丢给对应 CLI，让它自己读配置、自己改、自己验证：
-
-| CLI | 提示词文件 | 切换方式 |
-|---|---|---|
-| Claude Code | `deploy/cli-setup/claude-code.md` | streamable-http 原生（自带 http 支持） |
-| Codex desktop | `deploy/cli-setup/codex.md` | `npx mcp-remote` stdio↔HTTP 桥 |
-| zcode | `deploy/cli-setup/zcode.md` | `npx mcp-remote` stdio↔HTTP 桥 |
-| 其他 CLI | `deploy/cli-setup/other.md` | `npx mcp-remote` stdio↔HTTP 桥（通用） |
+不手敲命令 —— **一份"投喂提示词"适用所有 CLI**：`deploy/cli-setup/switch-to-remote.md`。文件里 A–D 按 CLI 分节（A Claude Code streamable-http 原生；B Codex desktop / C zcode / D 其他 CLI 用 `npx mcp-remote` stdio↔HTTP 桥），把文件内容整个丢给对应 CLI，它会先判断自己是哪类、只做自己那一节，自己读配置、自己改、自己验证。
 
 用法三步：① 打开目标 CLI 的聊天窗口；② 把文件里 `<服务器公网IP>` / `<端口>` / `<TOKEN>` 三个占位符换成真实值（token 在服务器 `/etc/sill-ensoul/env` 里）；③ 把整个文件内容粘贴给它。
 
@@ -184,7 +177,7 @@ cd /opt/sill-ensoul && tar -xf knowledge.tar && ls knowledge/agents/
 | 环境变量文件 | `/etc/sill-ensoul/env`（root-only, chmod 600） |
 | systemd unit | `deploy/sill-ensoul-http.service` |
 | 环境变量模板 | `.env.example` |
-| 客户端提示词 | `deploy/cli-setup/` |
+| 客户端提示词 | `deploy/cli-setup/switch-to-remote.md` |
 | KB 根 | `ENSOUL_KB`，示例 `/opt/sill-ensoul/knowledge` |
 | 源码 | https://github.com/sillogic/sill-ensoul （从 git 装，未发布 PyPI） |
 

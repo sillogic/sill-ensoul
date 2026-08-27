@@ -1,25 +1,18 @@
 # 各 CLI 指向远程 sill-ensoul MCP —— 提示词文件
 
 把本机 CLI（Claude Code / Codex / zcode 等）的 sill-ensoul MCP 从「本地 stdio」切换到「服务器 HTTP」。
-**原则：不手敲命令** —— 把对应文件整个丢给那个 CLI，让它自己读配置、自己改、自己验证。
+**原则：不手敲命令** —— 把 `switch-to-remote.md` 整个丢给那个 CLI，让它自己判断自己是哪类 CLI、自己读配置、自己改、自己验证。
 
 ## 用法（三步）
 
 1. 打开目标 CLI 的聊天窗口。
-2. 把文件里的三个占位符替换成真实值：
+2. 把 `switch-to-remote.md` 里的三个占位符替换成真实值：
    - `<服务器公网IP>` → 你的 ECS 公网 IP
    - `<端口>` → `ENSOUL_MCP_PORT`（默认 `8930`，没改就是它）
    - `<TOKEN>` → 服务器 `/etc/sill-ensoul/env` 里 `ENSOUL_MCP_TOKEN` 的值
-3. 把整个文件内容粘贴给该 CLI，让它自己处理（改配置、备份、验证一条龙）。
+3. 把整个文件内容粘贴给该 CLI，让它自己处理。
 
-## 文件对应
-
-| CLI | 文件 | 方式 |
-|---|---|---|
-| Claude Code | `claude-code.md` | streamable-http 原生 |
-| Codex desktop | `codex.md` | `npx mcp-remote` 桥 |
-| zcode | `zcode.md` | `npx mcp-remote` 桥 |
-| 其他任何 CLI | `other.md` | `npx mcp-remote` 桥 |
+**一个文件适用所有 CLI**，不用再按 CLI 挑文件：文件里 A–D 按 CLI 分节（A Claude Code streamable-http 原生；B Codex desktop / C zcode / D 其他 CLI 用 `npx mcp-remote` 桥），粘贴后它会只做自己那一节。
 
 ## 共同要点（提示词里已带，这里提醒）
 
