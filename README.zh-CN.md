@@ -139,6 +139,37 @@ sill-ensoul-init --sync-shell                                     # 刷新 CLI �
 
 ---
 
+## 远程部署（HTTP server）
+
+把**同一套 8 个工具**以 Streamable HTTP MCP server 形式跑在任何机器上（VPS / 家用服务器 /
+tailnet），让多台机器共享**同一份**记忆。每个请求都被静态 **Bearer token** 门禁拦住
+（SIL-7 / D11）——当前单租户，预留「身份 → KB 根」映射口子供未来多租户。
+
+```bash
+pip install "sill-ensoul[http]"            # stdio 安装保持零额外依赖
+ENSOUL_MCP_TOKEN=$(openssl rand -hex 32)   # 或: python -c "import secrets;print(secrets.token_hex(32))"
+ENSOUL_MCP_TOKEN=... sill-ensoul-http      # 默认绑定 0.0.0.0:8930
+```
+
+- **Fail-closed**：不设 `ENSOUL_MCP_TOKEN` 服务器**拒绝启动**——无鉴权的远程 server 正是
+  这个功能要消灭的东西。
+- 可选：`ENSOUL_MCP_HOST` / `ENSOUL_MCP_PORT` 环境变量覆盖（或 `--host` / `--port`）。KB
+  根仍是 `ENSOUL_KB` / 平台默认。
+
+把 CLI 的 MCP 配置指过去（streamable-http 客户端每个请求都会带 header）：
+
+```jsonc
+{ "type": "streamable-http", "url": "http://<server>:8930/mcp",
+  "headers": { "Authorization": "Bearer <token>" } }
+```
+
+或走 stdio↔HTTP 桥：`npx mcp-remote http://<server>:8930/mcp --header "Authorization: Bearer <token>"`。
+
+> **安全提示**：token 是鉴权边界——别提交进仓库；传输层安全交给私有网络（Tailscale /
+> VPN / 防火墙）；stdio server（`sill-ensoul-mcp`）保持仅本机、无需 token。
+
+---
+
 ## 测试
 
 ```bash
@@ -146,12 +177,13 @@ pip install -e .
 python -m tests.run_tests
 ```
 
-三个发布测试全绿 = 核心闭环跑通（都自建临时 KB，clone 后直接跑）：
+四个发布测试全绿 = 核心闭环跑通（都自建临时 KB，clone 后直接跑）：
 
 | 测试 | 验什么 |
 |---|---|
 | `test_search` | FTS5 检索 + persona 排除（11 项回归） |
 | `test_mcp_live` | MCP 壳层（8 工具，走真实 stdio） |
+| `test_http_live` | HTTP transport + Bearer 鉴权（fail-closed、401 门禁、真实 uvicorn 端到端） |
 | `test_cross_project` | 跨项目记忆留存（端到端） |
 
 ---
@@ -169,7 +201,7 @@ python -m tests.run_tests
 ## 深入阅读
 
 - [docs/DESIGN.md](docs/DESIGN.md) — 设计背景：为什么 OKF、为什么 MCP、与 mem0/letta/graphiti 的对比
-- [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D10 + 历史踩坑 H1-H12
+- [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D11 + 历史踩坑 H1-H12
 - [docs/multica.md](docs/multica.md) — 平台集成指南（Multica）：唤醒块模板、降级规则、批量上架模式
 - [WORKFLOW.md](WORKFLOW.md) — CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
 - [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读）

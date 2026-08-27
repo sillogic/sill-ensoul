@@ -84,24 +84,27 @@ MCP，但担心「装了 ensoul 的 multica 调装了 ensoul 的 CLI」出问题
   是 bootstrap —— §3.3 setupmd 就是它（setup 时一步装齐 + 幂等 + 版本检查），不是运行时
   magic。
 
-### 3.2 未来演进：远程 server / 多租户 —— 现在不写代码，只留边界（2026-08）
+### 3.2 未来演进：远程 server / 多租户 —— 鉴权已落地，其余只留边界（2026-08）
 
 用户计划：以后 MCP 上服务器（远程，使用会简单很多）、多租户后面再做；远程（Tailscale
-方案 B 暂缓）、鉴权（SIL-7）、多租户（SIL-8）各已有卡片。**结论：目前不需要为兼容写
-任何代码，边界已由构造覆盖**，现在要做的只有这一节说明：
+方案 B 暂缓）、鉴权（SIL-7）、多租户（SIL-8）各已有卡片。**SIL-7 鉴权已按指令落地
+（2026-08-27，见 D11）；其余仍不写代码，边界由构造覆盖**：
 
-- **transport 可换 = 配置不是代码**：MCP 客户端注册本就是配置驱动（今天 `{"type":"stdio",...}`，
-  将来 `{"type":"streamable-http","url":...}`），换远程 = 换注册条目，server 工具面
-  （8 工具）与数据层一行不动。server.py 保持无状态 + 显式 agent_id，就是为 transport
-  可换留的干净接口；将来加 HTTP transport 是**新增适配器，不是重构**。
+- **transport 可换 = 配置不是代码，且 HTTP 适配器已实现**：MCP 客户端注册本就是配置驱动
+  （今天 `{"type":"stdio",...}`，远程 `{"type":"streamable-http","url":...}`），换远程 =
+  换注册条目，server 工具面（8 工具）与数据层一行不动。HTTP transport = 新增适配器
+  （`ensoul/http.py`，复用 server.py 的同一批工具 callable），不是重构 —— D1 承诺兑现。
 - **多租户 = KB 根注入，数据模型不用改**：`ENSOUL_KB` 环境变量已让 KB 根可注入，租户 =
   每租户一个 KB 根（或路径前缀），agent_id 仍是数据层唯一身份键；SIL-8 开工时直接加
-  「租户 → KB 根」映射即可。
-- **远程的真正门槛是鉴权（SIL-7），不是技术**：远程 = 单 server 进程管一个 KB，并发
-  由进程内串行天然保证（文件级 D9 锁是给多进程同机用的）；跨机共享同一 KB 才需要分布式
-  锁，但那不是目标形态。所以远程上服务器的次序 = SIL-7 鉴权先落地。
-- **现在不动的原因**：三张卡都无真实负载验证需求，提前实现违反「能不动就不动」；留边界
-  = 这三张卡开工时拿到的是「不需要重构的地基」。
+  「租户 → KB 根」映射即可（http.py 已留 `_identity_for_token` / `_kb_root_for_identity`
+  口子，只加映射，鉴权协议与工具层零改动）。
+- **远程的真正门槛是鉴权（SIL-7），不是技术 —— 已落地**：`sill-ensoul-http`（Streamable
+  HTTP + Bearer token，`ENSOUL_MCP_TOKEN` 必设，缺 token 拒绝启动 fail-closed；单租户，
+  一个 token = 一个身份 → 一个 KB 根）。远程 = 单 server 进程管一个 KB，并发由进程内
+  串行天然保证；跨机共享同一 KB 才需要分布式锁，但那不是目标形态。
+- **剩下不动的原因**：SIL-8（多租户）与远程部署形态（Tailscale 方案 B 等）无真实负载
+  验证需求，提前实现违反「能不动就不动」；留边界 = 这两张卡开工时拿到的是
+  「不需要重构的地基」。
 
 ### 3.3 新人安装流程（setupmd，SIL-26 最终定案 2026-08-26）
 
@@ -156,11 +159,19 @@ append 进 instructions、替换 `<分身id>` 占位符即可，一次 `multica 
    agent 必做**，否则新 agent 在自己的创建对话里读不到 skill 不知道怎么绑；
 5. 验证 + 告知。
 
-### 4.3 name/description 同步（决策 6）
+### 4.3 name/description 同步（决策 6 + SIL-7 修正 2026-08-27）
 
-绑定收尾：`multica agent update <agent-id> --name "<分身id>" --description "<分身
+绑定收尾：`multica agent update <agent-id> --name "<分身id>@<机器>" --description "<分身
 AGENT.md 的 title/description>"` —— 让平台侧「看起来就是」那个分身（成员在 UI 里一眼
 认出）。分身后续 persona 更新时按需再同步。
+
+**实例名命名规则（SIL-7 讨论定案，2026-08-27）**：平台 agent 实例名一律
+`<分身id>@<机器>`（如 `ensoul-dev@home`、`ensoul-dev@mac`），**单机也加后缀** —— 因为
+后面增加多机时，裸名看不出是哪台机器；从第一天就带后缀，避免日后批量改名迁移。要点：
+
+- 实例名带机器后缀 ≠ 记忆键：唤醒块 `agent_index("<裸分身id>")` 不变，记忆仍读写同一份
+  KB（多机共享同一分身 = 读写同一份记忆，这正是远程 MCP 单一权威源的目的，记忆不分裂）。
+- 旧约定「单机 1:1 用裸名」作废，一律加后缀（代码零改动，后缀只活在平台 agent 实例名）。
 
 ### 4.4 通过 SETUP.md 初始化（决策 7 + SIL-29 细化）
 
@@ -184,7 +195,7 @@ agent 并绑定**（唤醒块 + skill，SIL-29 起取代「改名接收 agent」
 1. **分身枚举**：`list_agents` 列出所有 OKF agent（本机 `%LOCALAPPDATA%/ensoul/knowledge/
    agents/`，每个子目录一个分身）；排除 `.obsidian` 等非 agent 目录。
 2. **agent 创建**：每个分身
-   `multica agent create --name <分身id> --description <AGENT.md title/description>
+   `multica agent create --name <分身id>@<机器> --description <AGENT.md title/description>
    --instructions <唤醒块> --runtime-id <装了 pi mcp-bridge 的 runtime> --model <同现有>
    --permission-mode public_to --public-to-workspace`，然后
    `multica agent skills add <id> --skill-ids <ensoul-multica-binding>`（4.2 步骤 ④ 必做）。

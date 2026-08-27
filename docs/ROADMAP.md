@@ -2,7 +2,7 @@
 
 > 这是一份**活文档**，记录 sill-ensoul 在落地"与 CLI、模型供应商解耦的长期记忆系统"过程中的设计决策、已解决问题与已知限制。
 >
-> 阅读顺序：§1（设计原则）→ §2（设计决策 D1-D10）→ §3（已解决问题清单）→ §4（当前状态）。
+> 阅读顺序：§1（设计原则）→ §2（设计决策 D1-D11）→ §3（已解决问题清单）→ §4（当前状态）。
 
 ---
 
@@ -21,12 +21,12 @@
 
 ---
 
-## 2. 设计决策（D1-D6）
+## 2. 设计决策（D1-D11）
 
 ### D1 — 服务形式：MCP 作主接口，核心保持 MCP 无关
 
 - MCP 是当前最佳的"LLM 工具调用"主接口：各目标 CLI（Claude Code / Codex / Cursor / zcode / OpenCode）通吃，一次实现多处用，结构化参数优于文本解析。
-- **但 MCP 不能是唯一通路。** 关键纪律：**逻辑只进 `okf.py`；`server.py` 永远只做透传，不塞逻辑。** 这样未来可加 `cli.py`（二进制，最大可移植）、`http.py`（远程 / 多 CLI 共享实例）而不碰核心。
+- **但 MCP 不能是唯一通路。** 关键纪律：**逻辑只进 `okf.py`；`server.py` 永远只做透传，不塞逻辑。** 这样未来可加 `cli.py`（二进制，最大可移植）而不碰核心；`http.py`（远程 / 多 CLI 共享实例）已实现（D11，同样是新增适配器，核心未动）。
 - 现状已符合：`okf.py` 头部声明 *"pure logic and has no MCP dependency"*，`server.py` 是薄 FastMCP 适配层。**保持即可，不要破坏。**
 - 备选评估：HTTP/REST（CLI 不原生调，与 MCP 重复）、CLI 二进制（可移植但文本需解析）、纯文件（零依赖但写入易错）——均不如 MCP 适合本用途。
 
@@ -122,6 +122,33 @@
 - **两层各管一件事**：锁管**串行**（不丢更新），`_atomic_write_text` 管**崩溃**（不留半截文件）。`_sync_agent_index` 也要包：SQLite busy_timeout 默认 0，两进程同时 sync 同一 `index.db` 会报 `database is locked`。
 - **状态**：✅ 已落地。确定性语义测试（`tests/test_concurrent.py` A1/A2：持锁期间争抢必须 OperationalError、释放后立即成功）+ 并发压力测试（B3：N 进程并发 append 断言日志条数 = N；B4：并发写同一 concept 不撕裂）。
 
+### D11 — 远程部署：HTTP transport + Bearer token 鉴权（SIL-7，单租户先行）
+
+- **问题**（SIL-7）：要在云服务器上部署 MCP，先要解决「谁能连」——鉴权。stdio 只走本机
+  管道，天然私密；HTTP 一上公网/tailnet，谁拿到地址谁读全部记忆就不成立。多租户
+  （SIL-8，数据层「连上来后看哪份记忆」）与鉴权正交，另卡跟踪，不在本次范围。
+- **决策**：新增 `ensoul/http.py` = Streamable HTTP 适配器，复用 `server.py` 的同一批
+  工具 callable（8 工具定义一次，D1 保持：transport 是适配器不是重构）。外层包 Bearer
+  鉴权中间件，先于路由执行：
+  - 静态 token 来自 env `ENSOUL_MCP_TOKEN`；未配置 → 拒绝启动（fail-closed：无鉴权的
+    远程 server 正是 SIL-7 要消灭的）。
+  - 每个请求必须带 `Authorization: Bearer <token>`，否则 401（未知路径同样 401，不泄露
+    端点）；常量时间比较（`hmac.compare_digest`）防时序侧信道。
+  - FastMCP 默认的 DNS rebinding 防护只放行 localhost Host，远程 IP/域名会被 421 ——
+    显式关闭：Bearer 门禁先于路由对每个请求执行，rebinding 攻击者拿不到 token 也
+    没用；传输层安全交给部署形态（Tailscale/防火墙）。
+  - **单租户先行**：一个 token = 一个身份（owner）→ 一个 KB 根（`ENSOUL_KB`/平台默认，
+    `okf.kb_root()` 已可注入）。留「身份 → KB 根」映射口子（`_identity_for_token` /
+    `_kb_root_for_identity`）：SIL-8 只是加映射表，鉴权协议与工具层零改动 —— 构造覆盖，
+    不提前写代码。
+  - stdio（`sill-ensoul-mcp`）不加鉴权：本机管道天然私密，加了反而破坏现有注册。
+- **命令**：`sill-ensoul-http [--host H] [--port P]`（env 覆盖 `ENSOUL_MCP_HOST` /
+  `ENSOUL_MCP_PORT`，默认 0.0.0.0:8930）。uvicorn 是可选 extra（`pip install
+  "sill-ensoul[http]"`），stdio 安装保持零额外依赖。
+- **测试**：`tests/test_http_live.py`（fail-closed + 401 门禁 + 真实 uvicorn/官方 MCP
+  client 端到端），已纳入 `run_tests.py`。
+- **状态**：✅ 已落地（SIL-7，v0.4.0）。
+
 ---
 
 ## 3. 问题清单
@@ -170,6 +197,7 @@
 | ~~7~~ | ~~**GitHub 发布**~~ | ✅ 已推 github.com/sillogic/sill-ensoul | v0.1.0 tag 已打，首个公开版本上线 |
 | ~~8~~ | ~~**#12**~~ | ✅ 已修 并发写（okf.py SQLite 互斥锁 D9 + tests/test_concurrent.py） | 跨进程写同一 agent 不再丢更新；三平台同一份代码；确定性语义测试防回归 |
 | ~~9~~ | ~~**SIL-28 升级方式**~~ | ✅ 已落地 标准升级路径（UPGRADE.md + `--version` + `--sync-shell` 复用） | 升级 = 包 + 薄壳两部分；KB 永不触碰；不做自升级脚本（D10） |
+| ~~10~~ | ~~**SIL-7 MCP 鉴权**~~ | ✅ 已落地 远程 HTTP 部署（`ensoul/http.py`：Streamable HTTP + Bearer token，单租户 fail-closed，多租户留「身份→KB 根」映射口子） | 鉴权 = 连接层「谁能连」，与多租户正交；多机实例命名改为「分身id@机器」；D11 |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作，需要时做 |
 | — | PyPI 发布（可选） | `pip install sill-ensoul` 一行装 | 目前从 GitHub 装；发 PyPI 只加发版动作，不改代码，有需要再做 |
 

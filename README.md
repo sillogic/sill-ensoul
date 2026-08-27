@@ -143,6 +143,32 @@ Core loop: **wake** (load persona + knowledge map) → **recall** (search releva
 
 ---
 
+## Remote deployment (HTTP server)
+
+Run the **same 8 tools** as a Streamable HTTP MCP server on any machine (VPS / home server / tailnet) so multiple machines share **one** knowledge base. Every request is gated by a static **Bearer token** (SIL-7 / D11) — single-tenant today, with an identity→KB-root seam for future multi-tenancy.
+
+```bash
+pip install "sill-ensoul[http]"            # stdio installs stay zero-extra-dep
+ENSOUL_MCP_TOKEN=$(openssl rand -hex 32)   # or: python -c "import secrets;print(secrets.token_hex(32))"
+ENSOUL_MCP_TOKEN=... sill-ensoul-http      # default bind 0.0.0.0:8930
+```
+
+- **Fail-closed**: the server **refuses to start without `ENSOUL_MCP_TOKEN`** — an unauthenticated remote server is exactly what this is for.
+- Optional: `ENSOUL_MCP_HOST` / `ENSOUL_MCP_PORT` env overrides (or `--host` / `--port`). The KB root is still `ENSOUL_KB` / the platform default.
+
+Point a CLI's MCP config at it (streamable-http clients send the header on every request):
+
+```jsonc
+{ "type": "streamable-http", "url": "http://<server>:8930/mcp",
+  "headers": { "Authorization": "Bearer <token>" } }
+```
+
+or via a stdio↔HTTP bridge: `npx mcp-remote http://<server>:8930/mcp --header "Authorization: Bearer <token>"`.
+
+> **Security notes**: the token is the auth boundary — never commit it; prefer a private network (Tailscale / VPN / firewall) for transport security; the stdio server (`sill-ensoul-mcp`) stays local-only and needs no token.
+
+---
+
 ## Tests
 
 ```bash
@@ -150,12 +176,13 @@ pip install -e .
 python -m tests.run_tests
 ```
 
-Three release tests, all green = core loop works (each builds its own temp KB, runs straight after clone):
+Four release tests, all green = core loop works (each builds its own temp KB, runs straight after clone):
 
 | Test | Verifies |
 |---|---|
 | `test_search` | FTS5 search + persona exclusion (11 regressions) |
 | `test_mcp_live` | MCP shell layer (8 tools, real stdio) |
+| `test_http_live` | HTTP transport + Bearer auth (fail-closed, 401 gate, real uvicorn e2e) |
 | `test_cross_project` | Cross-project memory retention (end-to-end) |
 
 ---
@@ -173,7 +200,7 @@ Three release tests, all green = core loop works (each builds its own temp KB, r
 ## Dig deeper
 
 - [docs/DESIGN.md](docs/DESIGN.md) — design background: why OKF, why MCP, comparison with mem0/letta/graphiti
-- [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D10 + historical pitfalls H1-H12
+- [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D11 + historical pitfalls H1-H12
 - [docs/multica.md](docs/multica.md) — platform integration guide (Multica): wake-up block template, degradation rules, batch onboarding
 - [WORKFLOW.md](WORKFLOW.md) — CLI-agnostic workflow (wake/recall/distill/skill dispatch)
 - [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI

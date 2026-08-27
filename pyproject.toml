@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sill-ensoul"
-version = "0.3.0"
+version = "0.4.0"
 description = "OKF-backed long-term memory for agents, exposed via MCP. CLI- and model-agnostic."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,10 +15,16 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[project.optional-dependencies]
+# 只有远程 HTTP 部署（SIL-7）才需要 uvicorn；stdio 安装保持零额外依赖。
+http = ["uvicorn>=0.30"]
+
 [project.scripts]
 # 装完后,任意 cwd 直接跑 `sill-ensoul-mcp` 即启动 stdio MCP server。
 # 这就是解绑 cwd 的关键:不再依赖 `python -m ensoul.server` + cwd=repo。
 sill-ensoul-mcp = "ensoul.server:main"
+# 远程 HTTP 部署（SIL-7）：Streamable HTTP + Bearer token 鉴权。需要 [http] extra。
+sill-ensoul-http = "ensoul.http:main"
 # 初始化全局 KB + 打印各 CLI 适配步骤。分享给同事时,他装完跑这个就行。
 sill-ensoul-init = "ensoul.init_cmd:main"
 
