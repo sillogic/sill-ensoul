@@ -206,7 +206,9 @@ python -m tests.run_tests
 - [docs/ROADMAP.md](docs/ROADMAP.md) — 进度跟踪 + 设计决策 D1-D11 + 历史踩坑 H1-H12
 - [docs/multica.md](docs/multica.md) — 平台集成指南（Multica）：唤醒块模板、降级规则、批量上架模式
 - [WORKFLOW.md](WORKFLOW.md) — CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
-- [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读）
+- [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读，本地 MCP）
+- [deploy/cli-setup/switch-to-remote.md](deploy/cli-setup/switch-to-remote.md) — 远程 MCP 切换意图
+- [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica 平台 agent 绑定意图（前提：MCP 已配好）
 - [UPGRADE.md](UPGRADE.md) — 给 CLI 的 AI 读的升级意图（机器可读）
 
 ## License

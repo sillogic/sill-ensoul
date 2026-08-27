@@ -37,3 +37,8 @@ tools/
 *.tgz
 ensoul-knowledge-*
 knowledge*.tar*
+
+# Multica runtime workspace files (agent run context, daemon state, skills cache)
+.agent_context/
+.multica/
+.pi/

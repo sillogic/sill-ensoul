@@ -1,5 +1,11 @@
 # Sill-Ensoul CLI Setup (machine-readable adaptation intent)
 
+> **你是哪种用户？先选对文件（SIL-8 文档拆分定案）：**
+> - **本地直连 MCP**（本机 stdio，默认路径）→ 读**本文件**（SETUP.md）。
+> - **远程 MCP**（连服务器 / 接入卡用户）→ 读 [`deploy/cli-setup/switch-to-remote.md`](deploy/cli-setup/switch-to-remote.md)。
+> - **Multica 平台 agent**（前提：本机 CLI 已配好 MCP）→ 读 [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md)。
+> 三个文件各管一种场景，一份文件想写全反而难维护。
+
 > **Who reads this**: the AI inside the user's CLI (Claude Code / Codex / zcode / OpenCode /
 > any MCP-capable CLI). The user got this content to you in one of two ways:
 > - they said *"set up sill-ensoul from `<repo>`/SETUP.md"* and you read the file, or
@@ -120,90 +126,11 @@ If search feels slow or returns stale results after the user manually edits `.md
 files outside the tools, run `sill-ensoul-init --rebuild-index` to rebuild the
 local SQLite FTS index from the markdown source of truth.
 
-## Multica adaptation (this file arrived via a Multica conversation)
+## Multica 用户（平台 agent 绑定）
 
-The user may have dropped this file into a **Multica conversation** instead of a
-CLI. The intent is the same — wire sill-ensoul into THIS workspace — but the
-adaptation targets are Multica's own, not a per-CLI config. The receiving agent
-(this one) performs the setup; the user's ensoul interface is a **new dedicated
-agent** created for the default 分身 `alter-ego` (the digital twin
-`sill-ensoul-init` creates) and bound to it 1:1. Do NOT rename this receiving
-agent — it keeps its own identity.
-
-1. **Install ensoul into every CLI Multica recognizes on this machine — the
-   platform MCP library is NOT registered** (SIL-26 final decision 2026-08-26:
-   Multica doesn't host ensoul; the CLIs that Multica runs get ensoul). Result:
-   any runtime Multica uses has the tools, zero per-agent config, no
-   double-wiring. Idempotent — safe to re-run any time:
-
-   a. **Package + KB, machine-level, once** (idempotent):
-      - `sill-ensoul-mcp` on PATH? If not, `pip install sill-ensoul` (or
-        `pip install -e <repo>`) — same safety boundary: tell the user first,
-        show the command, get their OK. If yes, check the version with
-        `sill-ensoul-init --version` against the repo/release version — if the
-        installed one is older, run the UPGRADE.md flow (upgrade package +
-        `sill-ensoul-init --sync-shell`).
-      - Run `sill-ensoul-init` (idempotent — creates the global KB + default
-        分身 `alter-ego`, skips if already there).
-   b. **Detect the CLIs** — the set Multica recognizes on this machine:
-      - `multica runtime list --output json` → the runtimes registered for this
-        machine (provider field), AND
-      - scan PATH for the known agent CLI commands (`claude` / `codex` /
-        `opencode` / `pi` / `cursor-agent` / `kimi` / `qodercli` / `qwen` / …
-        — the same known-command list the Multica daemon probes; inside a task
-        `multica daemon probe-runtimes` is unavailable, so use runtime list +
-        PATH scan and take the union).
-      - Each unique CLI in the union gets step c.
-   c. **Per CLI, idempotent**:
-      - Already has the sill-ensoul MCP server registered (its own config)?
-        Skip registration. Not registered → register using THAT CLI's current
-        mechanism (the per-CLI steps earlier in this file are the reference:
-        `claude mcp add --scope user`, a config-file entry, `.mcp.json`, or the
-        pi extension `~/.pi/agent/settings.json` + `mcp-bridge.ts` — each CLI
-        has its own).
-      - Instruction file already contains `<!-- SILL-ENSOUL-SHELL-START -->`?
-        Skip. Not present → append `sill-ensoul-init --print-shell` output once
-        (never append twice; if unsure, ask).
-      - No per-CLI version step needed: one machine = one server version = one
-        KB, and step a already aligned the package.
-   d. **Do NOT register the platform MCP library** (`multica workspace mcp add`
-      / `multica agent mcp add`). It's a future option (remote server / several
-      runtimes coexisting / multi-machine) — not part of this setup.
-2. **Create the Multica agent for the default 分身 `alter-ego` and bind it**:
-   Multica agents and ensoul 分身 are bound 1:1 — the binding is a wake-up block
-   in the agent's `instructions` (there is no platform-level link). Create a new
-   agent that IS the digital twin on the board:
-   ```bash
-   multica agent create \
-     --name "alter-ego" \
-     --description "<alter-ego AGENT.md title/description>" \
-     --instructions "<platform base + 分身绑定 wake-up block>" \
-     --runtime-id <runtime that can reach the ensoul MCP tools> \
-     --model <same model as this agent> \
-     --permission-mode public_to --public-to-workspace
-   ```
-   - **Base instructions**: copy THIS agent's current platform instructions as
-     the starting point (so the new agent is a full Multica citizen), then
-     APPEND the `## 分身绑定(1:1)` wake-up block from `shells/multica/AGENTS.md`
-     in the repo — replacing `<分身id>` with `alter-ego` and the persona line
-     with the alter-ego persona (数字分身). **Append, don't overwrite.**
-   - **Identity-priority line** — the wake-up block must carry
-     `**身份优先级**:平台行为契约(issue 工作流/评论纪律)优先;分身用于专业判断与记忆。`
-     The `ensoul-multica-binding` skill template already has it; if you hand-write
-     the block, add it — new bindings are born with it, not patched later.
-   - **Runtime/model**: pick any local runtime on this machine — after step 1
-     every CLI Multica recognizes here has ensoul, so every runtime has the
-     tools. Use the same model this agent uses.
-   - **Attach the binding skill (if present)**: `multica skill list` — if
-     `ensoul-multica-binding` exists, attach it so the new agent can bind further
-     agents/分身 later: `multica agent skills add <new-agent-id> --skill-ids
-     <skill-id>`. On a very first install the skill may not exist yet — the
-     wake-up block alone IS the binding; the skill only adds future-binding
-     capability.
-3. **Verify**: `multica agent get <new-agent-id> --output json` shows name
-   `alter-ego`, instructions contain the wake-up block, and the agent can call
-   the `list_agents` / `agent_index` tools (e.g. `list_agents` must include
-   `alter-ego`).
+本文件是**本地直连**场景。Multica 平台 agent 的接入（前提：本机 CLI 已配好 MCP）见
+[`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) —— 那份文件只做平台侧
+（建 agent + 绑分身 + 验证），不做 MCP 安装。
 
 ## What NOT to do
 
@@ -224,12 +151,9 @@ wording naturally, but cover all three points):
 
 **✅ sill-ensoul is set up.**
 
-- **In Multica**: open the new **`alter-ego`** agent and start a chat there — it
-  is your digital twin. Say `唤醒 alter-ego` (or `wake up alter-ego` / `唤醒分身`)
-  in that conversation to start.
-- **In a CLI you use directly**: every detected CLI was wired in step 1 —
-  restart that CLI (config/instruction files load at startup, not
-  hot-reloaded), then in a new session:
+- **In a CLI you use directly**: the CLI was wired above — restart it
+  (config/instruction files load at startup, not hot-reloaded), then in a new
+  session:
 
 **👉 Say `唤醒 alter-ego`** (or `wake up alter-ego` / `唤醒分身`) to start.
 `alter-ego` is your digital twin — empty memory, accumulate experience with it

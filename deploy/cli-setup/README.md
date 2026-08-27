@@ -3,6 +3,10 @@
 把本机 CLI（Claude Code / Codex / zcode 等）的 sill-ensoul MCP 从「本地 stdio」切换到「服务器 HTTP」。
 **原则：不手敲命令** —— 把 `switch-to-remote.md` 整个丢给那个 CLI，让它自己判断自己是哪类 CLI、自己读配置、自己改、自己验证。
 
+> **文件分工（SIL-8 文档拆分定案 2026-08-27）**：本地直连 MCP → 仓库根 `SETUP.md`；
+> 远程 MCP → 本目录 `switch-to-remote.md`；Multica 平台 agent（前提：本机 CLI 已配好 MCP）
+> → 本目录 [`multica.md`](multica.md)。三个文件各管一种场景。
+
 ## 用法（三步）
 
 > ⚠️ **先复制出仓库再填值**：`switch-to-remote.md` 在公开 git 仓库里，直接替换占位符后一旦 `git add .` 提交就会泄露真实 IP/端口/token。**先复制一份到仓库外**：

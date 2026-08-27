@@ -238,7 +238,9 @@ Four release tests, all green = core loop works (each builds its own temp KB, ru
 - [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D12 + historical pitfalls H1-H12
 - [docs/multica.md](docs/multica.md) — platform integration guide (Multica): wake-up block template, degradation rules, batch onboarding
 - [WORKFLOW.md](WORKFLOW.md) — CLI-agnostic workflow (wake/recall/distill/skill dispatch)
-- [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI
+- [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI (local MCP)
+- [deploy/cli-setup/switch-to-remote.md](deploy/cli-setup/switch-to-remote.md) — remote MCP switch-over intent
+- [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica platform-agent binding intent (premise: MCP already configured)
 - [UPGRADE.md](UPGRADE.md) — machine-readable upgrade intent for the CLI's AI
 
 ## License
