@@ -15,6 +15,7 @@ Storage model:
 """
 from __future__ import annotations
 
+import contextvars
 import os
 import re
 import sqlite3
@@ -58,13 +59,60 @@ def _default_kb_root() -> Path:
     return Path.home() / ".ensoul" / "knowledge"
 
 
-def kb_root() -> Path:
-    """Knowledge root dir. ENSOUL_KB overrides; else a global default
-    (NOT the repo dir) so the package is location-independent once installed."""
+def base_kb_root() -> Path:
+    """The BASE knowledge root (SIL-8: the single-tenant root). ENSOUL_KB
+    overrides; else a global default (NOT the repo dir) so the package is
+    location-independent once installed.
+
+    Multi-tenant (SIL-8): the base root is the owner's root and the parent of
+    every tenant root (`base/tenants/<user_id>/`). The user table lives here
+    too (`base/users.json`) — intentionally OUTSIDE any tenant root, so no
+    tenant can read or write it."""
     env = os.environ.get("ENSOUL_KB")
     if env:
         return Path(env).expanduser().resolve()
     return _default_kb_root()
+
+
+# Per-request identity, injected by the HTTP auth middleware (ensoul/http.py)
+# for the duration of one request. None outside a request => kb_root() resolves
+# to the base root, so stdio (sill-ensoul-mcp), the admin CLI and tests are
+# byte-for-byte unaffected. The only tool-layer change SIL-8 needs (D12).
+_identity_ctx: contextvars.ContextVar[str | None] = \
+    contextvars.ContextVar("ensoul_identity", default=None)
+
+
+def current_identity() -> str | None:
+    """Identity bound to the current request/thread (None outside HTTP)."""
+    return _identity_ctx.get()
+
+
+@contextmanager
+def request_identity(identity: str | None):
+    """Bind an identity for the duration of a request (HTTP auth middleware).
+    Safe to nest; the previous value is restored on exit."""
+    token = _identity_ctx.set(identity)
+    try:
+        yield
+    finally:
+        _identity_ctx.reset(token)
+
+
+def tenant_root(identity: str | None) -> Path:
+    """KB root for an identity: owner/None => base root; a tenant user_id =>
+    `base/tenants/<user_id>/`. Every tenant gets its own isolated tree; two
+    tenants may even own same-named agents (both `ensoul-dev`) without
+    clashing, because the split happens at this root level (D12)."""
+    base = base_kb_root()
+    if not identity or identity == "owner":
+        return base
+    return base / "tenants" / identity
+
+
+def kb_root() -> Path:
+    """KB root for the CURRENT request identity (SIL-8 tenant-aware).
+    Outside an HTTP request this equals base_kb_root() — unchanged behavior."""
+    return tenant_root(_identity_ctx.get())
 
 
 def _agents_dir() -> Path:

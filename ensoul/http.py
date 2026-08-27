@@ -13,11 +13,14 @@ on its OWN FastMCP instance (server.mcp's session manager is single-use, so the
 stdio instance can't serve HTTP). The data layer is untouched — the KB root is
 still resolved by okf.kb_root() (ENSOUL_KB / platform default).
 
-Multi-tenant seam (SIL-8, NOT built): a valid token maps to an identity
-(`_identity_for_token`), and an identity maps to a KB root
-(`_kb_root_for_identity`). Today there is exactly one identity ("owner") and one
-process-wide root — single-tenant. SIL-8 only extends the mapping table; the
-auth protocol and the tool layer stay unchanged. See docs/ROADMAP.md D11.
+Multi-tenant seam (SIL-8, Phase 1 BUILT): a valid token maps to an identity
+(`_identity_for_token` — the owner token from env, or a lookup in the user
+ table at `users.json`), and an identity maps to a KB root
+(`_kb_root_for_identity` — owner => base root, a tenant user =>
+ `base/tenants/<user_id>/`). The middleware injects the identity into
+ okf.request_identity() for the duration of the request, so the 8 tools
+ resolve their KB root per-request via okf.kb_root() — the auth protocol and
+ the tool layer stay unchanged. See docs/ROADMAP.md D11/D12.
 
 Run (console script):  sill-ensoul-http [--host H] [--port P]
 or:                     python -m ensoul.http [--host H] [--port P]
@@ -37,6 +40,7 @@ from mcp.server.streamable_http import TransportSecuritySettings
 
 from . import okf
 from . import server
+from . import users
 
 # Tool callables live in server.py (single source of truth — D1). The stdio
 # FastMCP instance (server.mcp) cannot serve HTTP twice: its session manager
@@ -74,28 +78,27 @@ def _build_mcp() -> FastMCP:
 def _identity_for_token(token: str, valid_token: str) -> str | None:
     """Map a presented Bearer token to an identity, or None if invalid.
 
-    SIL-7 (today): exactly one valid token (env ENSOUL_MCP_TOKEN) maps to the
-    single "owner" identity. SIL-8 (future, not built): this is the seam — a
-    token->identity table (one entry per tenant); the auth protocol and the
-    tool layer below stay untouched.
+    Two layers, both fail-closed:
+    1. owner token (env ENSOUL_MCP_TOKEN, SIL-7): "owner" — sees the BASE KB
+       root, exactly the pre-SIL-8 single-tenant behavior (backward compatible).
+    2. tenant users (users.json, SIL-8 Phase 1): any enabled user's token maps
+       to their user_id; revoked users get None immediately (revocation is
+       effective on the next request — no restart needed).
     """
-    if not valid_token or not token:
-        return None
-    if not hmac.compare_digest(token, valid_token):
-        return None
-    return "owner"
+    if token and valid_token and hmac.compare_digest(token, valid_token):
+        return "owner"
+    return users.verify_token(token)
 
 
 def _kb_root_for_identity(identity: str) -> Path:
-    """KB root for an authenticated identity (SIL-8 seam, unused today).
+    """KB root for an authenticated identity (SIL-8 Phase 1).
 
-    SIL-7 (today): single-tenant — every identity uses the process-wide KB
-    root, already injectable via ENSOUL_KB (okf.kb_root()). SIL-8 (future, not
-    built): extend this to an identity->KB-root mapping table; the auth protocol
-    and the tool layer stay untouched. Kept as the documented seam so SIL-8
-    changes only this function.
+    owner => base root (single-tenant); a tenant user_id =>
+    `base/tenants/<user_id>/` — fully isolated per user. This is the documented
+    seam; the actual per-request resolution happens through okf.kb_root() via
+    the identity injected by the middleware below.
     """
-    return okf.kb_root()
+    return okf.tenant_root(identity)
 
 
 class _BearerAuthMiddleware:
@@ -137,7 +140,12 @@ class _BearerAuthMiddleware:
             await send({"type": "http.response.body", "body": body})
             return
         scope["ensoul_identity"] = identity
-        await self.app(scope, receive, send)
+        # Inject the identity for the duration of this request: okf.kb_root()
+        # resolves per-request, so the 8 tools read/write the right tenant root
+        # with ZERO changes to the tool layer (D12). anyio's to_thread copies
+        # the current context, so sync tool handlers see it too.
+        with okf.request_identity(identity):
+            await self.app(scope, receive, send)
 
 
 def create_app(token: str | None = None):
