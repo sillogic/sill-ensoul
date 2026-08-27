@@ -111,7 +111,7 @@ MCP，但担心「装了 ensoul 的 multica 调装了 ensoul 的 CLI」出问题
 用户通过 Multica 走 SETUP.md 安装（「setupmd」）：**Multica 平台不装 ensoul，把 ensoul
 装进本机所有被 Multica 识别到的 CLI**（幂等：已装跳过；已装则比版本，旧了升级）。可执行
 版本在 [`deploy/cli-setup/multica.md`](../deploy/cli-setup/multica.md)（SIL-8 文档拆分后：
-multica.md 只做平台侧，MCP 安装由 SETUP.md / switch-to-remote.md 负责）步骤 1 之前的前提
+multica.md 只做平台侧，MCP 安装由 SETUP.md / cli-remote.md 负责）步骤 1 之前的前提
 检查，要点：
 
 1. **机器级一次（幂等）**：`sill-ensoul-mcp` 在 PATH 上？没有 → `pip install sill-ensoul`
@@ -178,19 +178,23 @@ AGENT.md 的 title/description>"` —— 让平台侧「看起来就是」那个
 ### 4.4 通过 multica.md 初始化（决策 7 + SIL-29 细化 + SIL-8 文档拆分）
 
 SIL-8（2026-08-27）文档拆分定案后：接入引导按场景分成三个文件 —— 本地 MCP 用 SETUP.md、
-远程 MCP 用 switch-to-remote.md、**Multica 用 [`deploy/cli-setup/multica.md`](../deploy/cli-setup/multica.md)**。
-multica.md 的前提是**本机 CLI 已配好 MCP**（所以它不含安装步骤，只含：前提检查 → 建平台
-agent → 绑分身 → 验证）。老用户把 multica.md 直接丢给 multica agent 对话即可初始化。
+远程 MCP 用 [`deploy/cli-setup/cli-remote.md`](../deploy/cli-setup/cli-remote.md)（CLI 安装）、**Multica 用
+[`deploy/cli-setup/multica.md`](../deploy/cli-setup/multica.md)**。
+multica.md 的前提是**本机 CLI 已配好 MCP**（所以它不含安装步骤、不含密钥，只含：前提检查
+→ 确认平台 agent → 绑分身 → 验证）。老用户把 multica.md 直接丢给 multica agent 对话即可初始化。
 
-multica.md 覆盖：CLI 级安装（setupmd，§3.3，走前提检查路由到 SETUP.md）/ **创建默认分身
-`alter-ego` 的 agent 并绑定**（唤醒块 + skill，SIL-29 起取代「改名接收 agent」）/ 验证。
+multica.md 覆盖：前提检查（`list_agents` 验证工具可用）/ 确认或创建**一个**平台 agent /
+绑定**已有**分身（唤醒块 + skill）/ 验证。
 
-- **首次安装（SIL-29）**：接收 SETUP.md 的 agent **不改名**、保持自己的 Helper 身份，负责
-  **创建**一个名为 `alter-ego` 的新 agent —— instructions = 平台基础（复制接收 agent 的
-  instructions）+ 唤醒块（`<分身id>` = `alter-ego`，模板见
-  [shells/multica/AGENTS.md](../shells/multica/AGENTS.md)），runtime 选本机任意装好 ensoul 的
-  runtime（CLI 级安装后所有 runtime 都有工具），挂 `ensoul-multica-binding` skill（若
-  workspace 已存在）。用户在 workspace 里直接与 `alter-ego` agent 对话即开始使用。
+- **过渡阶段规则（2026-08-27，SIL-8）**：绑定只匹配**已有**分身，**不新建分身、不默认创建
+  `alter-ego` 分身** —— 服务端 ensoul 列表已有现成分身（alter-ego / ensoul-dev 等），直接绑
+  最贴近的一个即可。绑定 skill（§4.2）里「无匹配就 `create_agent` 新建」的规则在过渡阶段
+  暂停执行，由 multica.md 的显式规则覆盖（remote 用户拿到的是两份文件：CLI 安装
+  cli-remote.md + Multica 初始化 multica.md，multica.md 不再承担任何安装职责）。等 SIL-8
+  多租户完成后，每个用户有自己独立的 KB（tenants/&lt;user_id&gt;/），届时再谈按需新建分身。
+- **首次安装（SIL-29 修正）**：接收 multica.md 的 agent **不改名**、保持自己的 Helper 身份，
+  按上述规则确认/创建一个平台 agent 并绑定**已有**分身（不再创建 alter-ego 分身），唤醒块
+  模板见 [shells/multica/AGENTS.md](../shells/multica/AGENTS.md)。
 - **老用户**：更贴合 4.2 的绑定 skill（按领域匹配已有分身 1:1 绑定 + name/description
   同步），非一律 alter-ego。
 

@@ -200,7 +200,7 @@ or via a stdio↔HTTP bridge (works for any CLI):
 > **Security notes**: the token is the auth boundary — never commit it; prefer a private network (Tailscale / VPN / firewall) for transport security; the stdio server (`sill-ensoul-mcp`) stays local-only and needs no token. On a public network, front the server with TLS (Caddy/nginx reverse proxy) so the token is not sent in clear text.
 
 > **Full runbook**: step-by-step deployment, restart / upgrade / KB-migration / troubleshooting lives in [`docs/deployment.md`](docs/deployment.md).
-> **Client switch-over**: to point an existing local CLI at the remote server **without hand-editing configs**, paste the single prompt file [`deploy/cli-setup/switch-to-remote.md`](deploy/cli-setup/switch-to-remote.md) into that CLI — it identifies which CLI it is, applies the matching section, and updates its own MCP registration (see `docs/deployment.md` §4).
+> **Client install (remote)**: to point a CLI at the remote server **without hand-editing configs**, paste the single prompt file [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) into that CLI — it identifies which CLI it is, applies the matching section, and registers the remote MCP endpoint itself (see `docs/deployment.md` §4).
 
 ---
 
@@ -239,7 +239,7 @@ Four release tests, all green = core loop works (each builds its own temp KB, ru
 - [docs/multica.md](docs/multica.md) — platform integration guide (Multica): wake-up block template, degradation rules, batch onboarding
 - [WORKFLOW.md](WORKFLOW.md) — CLI-agnostic workflow (wake/recall/distill/skill dispatch)
 - [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI (local MCP)
-- [deploy/cli-setup/switch-to-remote.md](deploy/cli-setup/switch-to-remote.md) — remote MCP switch-over intent
+- [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) — remote MCP CLI install intent
 - [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica platform-agent binding intent (premise: MCP already configured)
 - [UPGRADE.md](UPGRADE.md) — machine-readable upgrade intent for the CLI's AI
 

@@ -207,7 +207,7 @@ python -m tests.run_tests
 - [docs/multica.md](docs/multica.md) — 平台集成指南（Multica）：唤醒块模板、降级规则、批量上架模式
 - [WORKFLOW.md](WORKFLOW.md) — CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
 - [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读，本地 MCP）
-- [deploy/cli-setup/switch-to-remote.md](deploy/cli-setup/switch-to-remote.md) — 远程 MCP 切换意图
+- [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) — 远程 MCP CLI 安装意图
 - [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica 平台 agent 绑定意图（前提：MCP 已配好）
 - [UPGRADE.md](UPGRADE.md) — 给 CLI 的 AI 读的升级意图（机器可读）
 

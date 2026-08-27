@@ -7,7 +7,7 @@ token exactly once and write a ready-to-forward **access card** markdown —
 credentials (real URL + token) plus a routing table to the per-scenario
 setup files (SIL-8 doc-split decision 2026-08-27: one file per scenario
 instead of one card covering everything — local MCP → SETUP.md, remote MCP →
-switch-to-remote.md, Multica → multica.md). The recipient pastes the card
+cli-remote.md, Multica → multica.md). The recipient pastes the card
 into their CLI / Multica conversation.
 
 Run on the server (or wherever the KB lives):
@@ -57,8 +57,8 @@ _CARD_TEMPLATE = """# 接入卡：sill-ensoul（用户：__USER_NAME__）
 | 你的场景 | 用哪个文件 | 说明 |
 |---|---|---|
 | 本地 MCP（本机 stdio） | `SETUP.md` | 首次安装，不需要 token |
-| 远程 MCP（本卡场景） | `deploy/cli-setup/switch-to-remote.md` | 用上面的真实值替换占位符 |
-| Multica 平台 agent | `deploy/cli-setup/multica.md` | **前提：先配好 MCP**，再建 agent + 绑分身 |
+| 远程 MCP（本卡场景） | `deploy/cli-setup/cli-remote.md` | 用上面的真实值替换占位符 |
+| Multica 平台 agent | `deploy/cli-setup/multica.md` | **前提：先配好 MCP**，再绑**已有**分身（不新建） |
 
 你是本机 CLI / Multica agent。请按你所属场景读对应文件：**自己动手改配置、自己验证，不要只给我命令让我执行。**
 

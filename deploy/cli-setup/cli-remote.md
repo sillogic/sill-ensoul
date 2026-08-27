@@ -1,8 +1,8 @@
-# 任务：把 sill-ensoul MCP 从本地 stdio 切换到远程 HTTP 服务器
+# 任务：为远程 MCP 用户安装 sill-ensoul（CLI 接入）
 
 > **你是哪种用户？先选对文件（SIL-8 文档拆分定案）：**
 > - **本地直连 MCP**（本机 stdio，默认路径）→ 读 [`SETUP.md`](../../SETUP.md)。
-> - **远程 MCP**（连服务器 / 接入卡用户）→ 读**本文件**。
+> - **远程 MCP**（连服务器 / 接入卡用户）→ 读**本文件**（CLI 安装）。
 > - **Multica 平台 agent**（前提：本机 CLI 已配好 MCP）→ 读 [`multica.md`](multica.md)。
 > 三个文件各管一种场景，一份文件想写全反而难维护。
 
@@ -11,12 +11,17 @@
 > 本文件在公开 git 仓库里。**不要在仓库内直接替换占位符**——填了真实 IP/端口/token 后，下次 `git add .` 提交就会把它带进历史并推送出去，等于公开泄露。
 >
 > 正确做法：**先把文件复制到仓库外，在副本上填值，粘贴完删除副本**：
-> - Windows（PowerShell）：`Copy-Item deploy\cli-setup\switch-to-remote.md $HOME\switch-to-remote.md` → 改 `$HOME\switch-to-remote.md` → 用完 `Remove-Item $HOME\switch-to-remote.md`
-> - Linux / macOS：`cp deploy/cli-setup/switch-to-remote.md ~/switch-to-remote.md` → 改 `~/switch-to-remote.md` → 用完 `rm ~/switch-to-remote.md`
+> - Windows（PowerShell）：`Copy-Item deploy\cli-setup\cli-remote.md $HOME\cli-remote.md` → 改 `$HOME\cli-remote.md` → 用完 `Remove-Item $HOME\cli-remote.md`
+> - Linux / macOS：`cp deploy/cli-setup/cli-remote.md ~/cli-remote.md` → 改 `~/cli-remote.md` → 用完 `rm ~/cli-remote.md`
 >
 > 副本在仓库目录之外，git 永远看不见它，物理上不可能被提交。下面这份文件里仍是占位符，供直接粘贴给 CLI。
 
-你是本机 CLI。请帮我完成一次 sill-ensoul MCP 配置切换：**自己动手改配置、自己验证，不要只给我命令让我执行。**
+你是本机 CLI。请帮我完成 sill-ensoul MCP 的**安装（远程接入）**：**自己动手改配置、自己验证，不要只给我命令让我执行。**
+
+## 本文件做什么 / 不做什么
+
+- **做**：把本 CLI 的 sill-ensoul MCP 注册指向远程服务器（8 个工具：list_agents / agent_index / wiki_* 等通过远程连接可用）。
+- **不做**：不安装本地 Python 包、不建本地知识库（KB）、不创建 `alter-ego` 分身——**记忆和分身都在服务端 KB 里**，本机不产生本地副本。
 
 ## 目标服务器（已确认可连）
 
@@ -44,8 +49,8 @@
 ## A. Claude Code
 
 1. 找到 sill-ensoul 的 MCP 注册。检查两处：① `~/.claude.json` 顶层 `mcpServers`（全局层）；② 当前项目 `.mcp.json` 顶层 `mcpServers`（项目层）。两处都可能存在 —— 告诉我你发现了几处、分别在哪个文件、现在的注册内容是什么。
-2. 对每处现有注册，先把它**原样备份**（写到一个不会被 git 跟踪的位置，如 `~/.sill-ensoul-mcp-config.backup.json`），告诉我备份路径。
-3. 把 sill-ensoul 的注册改成下面这个 streamable-http 形式（server 名保持 `sill-ensoul` 不变）：
+2. 对每处**已有**注册，先把它**原样备份**（写到一个不会被 git 跟踪的位置，如 `~/.sill-ensoul-mcp-config.backup.json`），告诉我备份路径。没有旧注册则跳过本步。
+3. 把 sill-ensoul 的注册设置成下面这个 streamable-http 形式（server 名保持 `sill-ensoul` 不变）：
 
 ```json
 { "mcpServers": { "sill-ensoul": {
@@ -58,7 +63,6 @@
 如果你的版本较老不支持 `streamable-http`，告诉我并改用 `"type": "http"`（或提示我先升级 CLI）。
 
 4. 校验：确认改动后文件是合法 JSON、结构正确；逐处说明改了什么、旧值备份在哪。
-5. 不要动本地 `sill-ensoul-mcp` 的安装（stdio 本地 server 保留；以后想切回来用备份即可）。
 
 ---
 
@@ -66,7 +70,7 @@
 
 1. 打开 `~/.codex/config.toml`，找到（或新增）`[mcp_servers.sill-ensoul]` 段。
 2. 若已有旧注册，先把该段**原样备份**（如 `~/.codex/sill-ensoul-mcp.backup.toml`），告诉我备份路径。
-3. 把该段改成用 `mcp-remote` 桥接远程 HTTP（Windows 用 `cmd /c` 包一层，Linux/macOS 直接写）：
+3. 把该段设置成用 `mcp-remote` 桥接远程 HTTP（Windows 用 `cmd /c` 包一层，Linux/macOS 直接写）：
 
 Windows：
 
@@ -87,7 +91,6 @@ startup_timeout_ms = 15000
 ```
 
 4. 校验：确认 config.toml 是合法 TOML、段结构正确；说明改了什么、备份在哪。
-5. 不要动 `~/.codex/AGENTS.md` 里的规则引用（薄壳只管规则，不管 MCP server 注册）。
 
 ---
 
@@ -95,9 +98,8 @@ startup_timeout_ms = 15000
 
 1. 找到 sill-ensoul 的 MCP server 注册 —— 通常在 `~/.zcode/cli/config.json` 的 `servers.sill-ensoul` 键下（以你的实际配置文件为准），把现在的注册内容告诉我。
 2. 先把旧注册**原样备份**（如 `~/.zcode/sill-ensoul-mcp.backup.json`），告诉我备份路径。
-3. 把 sill-ensoul 的注册改成「stdio 命令桥接远程 HTTP」：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你自己配置 schema 里注册一个 stdio server 的既有写法来放（Windows 下若命令名找不到，可加 `cmd /c` 包一层）。server 名保持 `sill-ensoul` 不变。
+3. 把 sill-ensoul 的注册设置成「stdio 命令桥接远程 HTTP」：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你自己配置 schema 里注册一个 stdio server 的既有写法来放（Windows 下若命令名找不到，可加 `cmd /c` 包一层）。server 名保持 `sill-ensoul` 不变。
 4. 校验：配置文件是合法 JSON、结构正确；说明改了什么、备份在哪。
-5. 不要动你的 `AGENTS.md` 规则引用（薄壳只管规则，不管 MCP server 注册）。
 
 ---
 
@@ -105,14 +107,28 @@ startup_timeout_ms = 15000
 
 1. 找到本 CLI 里 sill-ensoul 的 MCP server 注册位置（你比任何人都清楚自己的配置放哪、什么格式），把现在的注册内容告诉我。
 2. 先把旧注册**原样备份**到不会被 git 跟踪的位置，告诉我备份路径。
-3. 把 sill-ensoul 的注册改成「stdio 命令桥接远程 HTTP」—— 这是任何 CLI 都通用的方式（不依赖各家对 http 的原生支持）：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你既有 stdio server 注册的写法放。server 名保持 `sill-ensoul` 不变。
+3. 把 sill-ensoul 的注册设置成「stdio 命令桥接远程 HTTP」—— 这是任何 CLI 都通用的方式（不依赖各家对 http 的原生支持）：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你既有 stdio server 注册的写法放。server 名保持 `sill-ensoul` 不变。
 4. 校验：配置文件格式合法、结构正确；说明改了什么、备份在哪。
+
+---
+
+## 薄壳（可选但推荐）
+
+上面只装了工具；要让本 CLI 学会 ensoul 工作流（唤醒分身 / 检索记忆 / 蒸馏沉淀），把
+[`ensoul/SHELL.md`](../../ensoul/SHELL.md) 的规则内容 **append**（不覆盖）进本 CLI 的
+指令文件（Claude Code 的 `~/.claude/CLAUDE.md`、zcode 的 `~/.zcode/AGENTS.md` 等，按你
+自己的机制）。已有 `<!-- SILL-ENSOUL-SHELL-START -->` 定界标记则说明已装过，跳过。
+> 远程接入不装本地包，所以**不用** `sill-ensoul-init --print-shell`——直接从
+> `ensoul/SHELL.md` 取内容即可。
 
 ---
 
 ## 收尾（所有 CLI 都做）
 
 - **必须完全退出本 CLI 再重新打开**，新会话才会用新配置（配置启动时加载，不热更新）。
-- 重启后在会话里调 `agent_index` / `wiki_search` 能通 = 切换成功。
+- 重启后在会话里调 `agent_index` / `wiki_search` 能通 = 接入成功。验证以**当前注册指向的
+  服务端**实际返回为准——`list_agents` 返回的是服务端 KB 里的现成分身（alter-ego /
+  ensoul-dev 等），不要期待本机有 alter-ego（本机不建本地 KB）。
 - 不要把 token / IP / 端口写进任何会被 git 提交的文件：填了真实值的提示词文件一律在**仓库外的副本**上改（见文件开头），用完删除。
-- 顺序别反：先确认服务器服务在跑（`curl` 返回 401）、KB 已迁移，再切配置。
+- 顺序别反：先确认服务器服务在跑（`curl` 返回 401）、KB 已迁移，再配客户端。
+- 配好 CLI 后，如果还要接入 Multica 平台，用你手里的另一份文件（`multica.md`，Multica 初始化）。

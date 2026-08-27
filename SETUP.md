@@ -2,7 +2,7 @@
 
 > **你是哪种用户？先选对文件（SIL-8 文档拆分定案）：**
 > - **本地直连 MCP**（本机 stdio，默认路径）→ 读**本文件**（SETUP.md）。
-> - **远程 MCP**（连服务器 / 接入卡用户）→ 读 [`deploy/cli-setup/switch-to-remote.md`](deploy/cli-setup/switch-to-remote.md)。
+> - **远程 MCP**（连服务器 / 接入卡用户）→ 读 [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md)。
 > - **Multica 平台 agent**（前提：本机 CLI 已配好 MCP）→ 读 [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md)。
 > 三个文件各管一种场景，一份文件想写全反而难维护。
 
