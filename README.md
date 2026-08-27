@@ -162,6 +162,30 @@ ENSOUL_MCP_TOKEN=... sill-ensoul-http      # default bind 0.0.0.0:8930
 - **Fail-closed**: the server **refuses to start without `ENSOUL_MCP_TOKEN`** — an unauthenticated remote server is exactly what this is for.
 - Optional: `ENSOUL_MCP_HOST` / `ENSOUL_MCP_PORT` env overrides (or `--host` / `--port`). The KB root is still `ENSOUL_KB` / the platform default.
 
+**Environment variables** — a ready template lives in [`.env.example`](.env.example) (token / KB root / host / port). For systemd, copy it to a root-only file and load it with `EnvironmentFile`; a ready-to-edit unit is at [`deploy/sill-ensoul-http.service`](deploy/sill-ensoul-http.service):
+
+```bash
+sudo mkdir -p /etc/sill-ensoul
+sudo cp .env.example /etc/sill-ensoul/env && sudo chmod 600 /etc/sill-ensoul/env
+sudo vi /etc/sill-ensoul/env                  # 填 ENSOUL_MCP_TOKEN / ENSOUL_KB
+sudo cp deploy/sill-ensoul-http.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now sill-ensoul-http
+systemctl status sill-ensoul-http             # 改完 env 要 restart 才生效
+```
+
+**Migrate the KB** — memory is plain files under the local KB root (`knowledge/`); copy the whole tree to the server's `ENSOUL_KB` (exclude per-agent `.fts/` caches — they rebuild automatically):
+
+```bash
+# local (Windows PowerShell, in %LOCALAPPDATA%\ensoul):
+tar -cf knowledge.tar --exclude=.fts knowledge
+scp knowledge.tar root@<server>:/opt/sill-ensoul/
+# server:
+cd /opt/sill-ensoul && tar -xf knowledge.tar && ls knowledge/agents/
+```
+
+> If multiple machines each have a KB, pick ONE as baseline first — do not blindly overwrite; merge the stragglers' unique content by hand.
+
 Point a CLI's MCP config at it (streamable-http clients send the header on every request):
 
 ```jsonc
@@ -169,9 +193,9 @@ Point a CLI's MCP config at it (streamable-http clients send the header on every
   "headers": { "Authorization": "Bearer <token>" } }
 ```
 
-or via a stdio↔HTTP bridge: `npx mcp-remote http://<server>:8930/mcp --header "Authorization: Bearer <token>"`.
+or via a stdio↔HTTP bridge (works for any CLI): `npx mcp-remote http://<server>:8930/mcp --header "Authorization: Bearer <token>"`.
 
-> **Security notes**: the token is the auth boundary — never commit it; prefer a private network (Tailscale / VPN / firewall) for transport security; the stdio server (`sill-ensoul-mcp`) stays local-only and needs no token.
+> **Security notes**: the token is the auth boundary — never commit it; prefer a private network (Tailscale / VPN / firewall) for transport security; the stdio server (`sill-ensoul-mcp`) stays local-only and needs no token. On a public network, front the server with TLS (Caddy/nginx reverse proxy) so the token is not sent in clear text.
 
 ---
 

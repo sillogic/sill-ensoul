@@ -1,0 +1,37 @@
+# sill-ensoul HTTP MCP server — systemd unit 示例（SIL-7 远程部署）
+#
+# 用法：
+#   1) 环境变量写进 root-only 文件（别写进 unit、别提交 git）：
+#        sudo mkdir -p /etc/sill-ensoul
+#        sudo cp .env.example /etc/sill-ensoul/env
+#        sudo chmod 600 /etc/sill-ensoul/env
+#        sudo vi /etc/sill-ensoul/env      # 填 ENSOUL_MCP_TOKEN / ENSOUL_KB
+#   2) 安装 unit 并启动：
+#        sudo cp deploy/sill-ensoul-http.service /etc/systemd/system/
+#        sudo systemctl daemon-reload
+#        sudo systemctl enable --now sill-ensoul-http
+#   3) 查状态 / 看日志 / 重启：
+#        systemctl status sill-ensoul-http
+#        journalctl -u sill-ensoul-http -f
+#        sudo systemctl restart sill-ensoul-http
+#
+# 注意：改 /etc/sill-ensoul/env 后必须 restart 才生效 —— 环境变量只在
+# 进程启动时读一次，不热更新。改 unit 文件本身才需要 daemon-reload。
+
+[Unit]
+Description=sill-ensoul MCP server (Streamable HTTP, Bearer auth)
+After=network.target
+
+[Service]
+# 从这里读全部环境变量（ENSOUL_MCP_TOKEN / ENSOUL_KB / ENSOUL_MCP_HOST / ENSOUL_MCP_PORT）
+EnvironmentFile=/etc/sill-ensoul/env
+# 建独立用户更安全：User=sill-ensoul（并给该用户对 ENSOUL_KB 目录的读写权限）
+User=root
+# 若 package 装在系统 Python，ExecStart 可简化为 sill-ensoul-http
+WorkingDirectory=/opt/sill-ensoul
+ExecStart=/opt/sill-ensoul/.venv/bin/sill-ensoul-http
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
