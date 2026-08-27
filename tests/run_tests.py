@@ -33,6 +33,7 @@ def main() -> None:
         "tests.test_search",         # H1/H7 检索回归(FTS5 + persona 排除)
         "tests.test_mcp_live",       # MCP 壳层(8 工具)
         "tests.test_http_live",      # HTTP transport + Bearer 鉴权(SIL-7/D11)
+        "tests.test_users",           # 多租户:用户表 + tenant 隔离(SIL-8/D12)
         "tests.test_cross_project",  # 跨项目记忆端到端
         "tests.test_concurrent",     # 并发写:跨进程串行化(ROADMAP #12/D9)
     ]

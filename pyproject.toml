@@ -31,6 +31,9 @@ sill-ensoul-mcp = "ensoul.server:main"
 sill-ensoul-http = "ensoul.http:main"
 # 初始化全局 KB + 打印各 CLI 适配步骤。分享给同事时,他装完跑这个就行。
 sill-ensoul-init = "ensoul.init_cmd:main"
+# 多租户用户管理（SIL-8 方案 A：admin CLI，服务器上跑）。
+# create/revoke/enable/reset + 生成含真实 URL/token 的 md 接入卡。
+sill-ensoul-admin = "ensoul.admin_cmd:main"
 
 [tool.setuptools]
 packages = ["ensoul"]

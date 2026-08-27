@@ -166,6 +166,43 @@ cd /opt/sill-ensoul && tar -xf knowledge.tar && ls knowledge/agents/
 | `curl` 返回 401 | ✅ 正常，门禁在工作 | — |
 | 客户端调不到 sill-ensoul 工具 | 配置没生效 / 没重启 | 完全退出 CLI 重开；检查备份前后配置差异 |
 | 远程连不上（超时/拒绝） | 服务没起 / 端口没放行 / 公网 IP 变了 | `systemctl status` + `ss -tlnp`；按量付费实例停机再开可能换公网 IP，介意就绑弹性 IP |
+| 某用户的 token 报 401 | 用户被 revoke / token 换过 | `sill-ensoul-admin user list` 看 enabled；`reset` 换新 token + 新接入卡 |
+
+---
+
+## 七、多租户用户管理（SIL-8，方案 A）
+
+多用户共用同一服务器时，每个用户 = 一个 Bearer token = 一个**隔离的 KB 根**（`<ENSOUL_KB>/tenants/<user_id>/`）。
+
+### 7.1 用户管理（服务器上跑，零 UI）
+
+```bash
+# 创建用户：打印 token（仅此一次）+ 生成接入卡 md（含真实 URL+token，转发给该用户）
+sill-ensoul-admin user create --name 小王 --url http://<公网IP>:<端口>/mcp
+# 也可以显式指定 user_id（默认是名字的 slug，中文名会退化成 u-xxxxxx）
+sill-ensoul-admin user create --name 小王 --id xiaowang --url http://1.2.3.4:8930/mcp
+# 列表（永远不显示 token，只有哈希前缀供核对）
+sill-ensoul-admin user list
+# 吊销（token 立即失效，下次请求生效，无需重启）/ 恢复 / 轮换（换新 token + 新接入卡）
+sill-ensoul-admin user revoke xiaowang
+sill-ensoul-admin user enable  xiaowang
+sill-ensoul-admin user reset   xiaowang --url http://1.2.3.4:8930/mcp
+```
+
+KB 不在默认位置时加 `--kb <路径>`（或设 `ENSOUL_KB`）。
+
+### 7.2 鉴权两路（owner 向后兼容）
+
+- **owner token**（`ENSOUL_MCP_TOKEN`）：身份 `owner`，看 base 根 —— 存量部署零改动，owner 是管理员，能看到所有租户数据（管理/排障用）。
+- **用户 token**（用户表）：身份 = `user_id`，只能读写自己的 `tenants/<user_id>/` —— 两个租户可以有同名 agent（都是 `ensoul-dev`），互不干扰。
+
+### 7.3 接入卡说明
+
+- `user create` / `user reset` 会在 `--out`（默认当前目录）写 `sill-ensoul-card-<id>.md`：SIL-35 自识别分节（A Claude Code / B Codex / C zcode / D 其他）+ E Multica（平台 agent 先装工具再绑分身）。
+- **卡里是活 token，等于钥匙**：只走私密渠道转发，绝不进 git / 公开渠道；接入完成后建议删除。
+- 用户 token 泄露时 `user revoke`（立即杀死）或 `user reset`（换新）。
+- 用户表在 `<ENSOUL_KB>/users.json`，只存 sha256 哈希，服务器文件泄露 ≠ 凭据泄露。
+- 公网形态下 Bearer 是明文裸奔风险，仍须挂 TLS（见§5）。
 
 ---
 

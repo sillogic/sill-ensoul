@@ -2,7 +2,7 @@
 
 > 这是一份**活文档**，记录 sill-ensoul 在落地"与 CLI、模型供应商解耦的长期记忆系统"过程中的设计决策、已解决问题与已知限制。
 >
-> 阅读顺序：§1（设计原则）→ §2（设计决策 D1-D11）→ §3（已解决问题清单）→ §4（当前状态）。
+> 阅读顺序：§1（设计原则）→ §2（设计决策 D1-D12）→ §3（已解决问题清单）→ §4（当前状态）。
 
 ---
 
@@ -21,7 +21,7 @@
 
 ---
 
-## 2. 设计决策（D1-D11）
+## 2. 设计决策（D1-D12）
 
 ### D1 — 服务形式：MCP 作主接口，核心保持 MCP 无关
 
@@ -154,6 +154,20 @@
   差异，迁移完再放开上界。
 - **状态**：✅ 已落地（SIL-7，v0.4.0）。
 
+### D12 — 多租户用户管理：一个 token = 一个用户 = 一个隔离 KB 根（SIL-8，方案 A）
+
+- **问题**（SIL-8）：多用户共用同一个服务器的 MCP 服务时，需要用户隔离（数据层「连上来后看哪份记忆」）+ 用户管理。鉴权（SIL-7/D11）是连接层「谁能连」，多租户是数据层，正交但依赖前者的 token 协议。用户明确要求：**不做开放注册**（私有/小团队定位），admin 创建用户并**分发 md 接入卡**，用户拿到丢给 CLI 即完成接入。
+- **决策**：
+  - **用户模型**：一个用户 = 一个 Bearer token → 一个身份 → 一个隔离 KB 根（`base/tenants/<user_id>/`）。MCP 客户端只认 `Authorization: Bearer` 头，无登录/密码概念 → 不做注册流/密码体系；用户管理本质 = 映射表 `token → 身份 → KB 根`。
+  - **用户表**：`base/users.json`（base 根上，故意不在任何 tenant 根内 —— tenant 读不到也写不到它）。存 `user_id → name + token_hash(sha256) + enabled + created_at + note`；**token 只存哈希**，明文只在 create/reset 时展示一次（文件泄漏 ≠ 凭据泄漏；支持吊销/重置）。
+  - **admin 形态（用户拍板：方案 A）**：零 UI 的 `sill-ensoul-admin` CLI（`user create/list/revoke/enable/reset`），在服务器上跑；B（`/admin/*` 端点 + 静态页）作为 A 的薄壳包装，随时可加。create/reset 同时生成**md 接入卡**（见下）。
+  - **鉴权两路**：owner token（env `ENSOUL_MCP_TOKEN`，SIL-7）→ 身份 `owner` → base 根（**向后兼容**，存量部署零改动）；用户 token → 查表 → `user_id` → `base/tenants/<user_id>/`。吊销即时生效（每次请求现查表，无进程内缓存，无需重启）。
+  - **工具层唯一改动**：`okf.kb_root()` 从进程级全局解析改为按请求身份解析 —— HTTP 中间件鉴权通过后把身份注入 contextvar（`okf.request_identity`），请求结束还原；stdio（`sill-ensoul-mcp`）/admin CLI/测试无身份 → 解析到 base 根，行为逐字节不变。8 个工具零改动（D1 继续成立：transport 是适配器）。anyio 的 `to_thread` 会拷贝当前 context，同步工具 handler 也能看到身份。
+  - **接入卡 = SIL-35 自识别分节模式的复用与扩展**：单文件，A Claude Code / B Codex / C zcode / D 其他 CLI + **E Multica**（平台 agent：先按 A–D 装工具，再按 `ensoul-multica-binding` 规则 `list_agents` 匹配绑/建分身，工具不热加载的当前 run 按降级规则先干活）。真实 URL+token 在生成时填入；**卡含活 token，必须留在仓库外**（CLI 默认写到 cwd 并打印警告；不入 git、不走公开渠道，公网必须 TLS）。
+- **附带收益**：隔离在 KB 根层 → 两个租户可各有同名 agent（都是 `ensoul-dev`）不冲突；多机命名规则（分身id@机器）在租户内部照旧。
+- **边界**：用户表是 admin 单写者（服务器上一个管理员操作），读改写 + 原子写足够，不复用 D9 per-agent 锁；并发 admin 操作最后写者胜，小团队可接受。
+- **状态**：✅ Phase 1 已落地（用户表 + admin CLI + md 接入卡 + http 口子打通 + tenant 隔离端到端测试）。Phase 2 待办：B 形态薄页面、租户 onboarding/迁移工具、`user delete`（当前 revoke 即等效禁用，不删数据）。
+
 ---
 
 ## 3. 问题清单
@@ -203,6 +217,7 @@
 | ~~8~~ | ~~**#12**~~ | ✅ 已修 并发写（okf.py SQLite 互斥锁 D9 + tests/test_concurrent.py） | 跨进程写同一 agent 不再丢更新；三平台同一份代码；确定性语义测试防回归 |
 | ~~9~~ | ~~**SIL-28 升级方式**~~ | ✅ 已落地 标准升级路径（UPGRADE.md + `--version` + `--sync-shell` 复用） | 升级 = 包 + 薄壳两部分；KB 永不触碰；不做自升级脚本（D10） |
 | ~~10~~ | ~~**SIL-7 MCP 鉴权**~~ | ✅ 已落地 远程 HTTP 部署（`ensoul/http.py`：Streamable HTTP + Bearer token，单租户 fail-closed，多租户留「身份→KB 根」映射口子） | 鉴权 = 连接层「谁能连」，与多租户正交；多机实例命名改为「分身id@机器」；D11 |
+| ~~11~~ | ~~**SIL-8 多租户 Phase 1**~~ | ✅ 已落地 用户表 + admin CLI + md 接入卡（`ensoul/users.py` + `sill-ensoul-admin`，token 只存哈希；owner token 向后兼容；http 口子打通；tenant KB 根隔离端到端测试） | 工具层仅 `okf.kb_root()` 按 contextvar 身份解析一处改动；接入卡复用 SIL-35 A–D 分节 + Multica 分节；D12 |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作，需要时做 |
 | — | PyPI 发布（可选） | `pip install sill-ensoul` 一行装 | 目前从 GitHub 装；发 PyPI 只加发版动作，不改代码，有需要再做 |
 
