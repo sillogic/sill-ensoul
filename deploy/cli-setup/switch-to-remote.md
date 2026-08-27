@@ -28,6 +28,11 @@
 | zcode | **C** | `npx mcp-remote` stdio↔HTTP 桥 |
 | 其他任何 CLI | **D** | `npx mcp-remote` stdio↔HTTP 桥（通用） |
 
+> **mcp-remote 桥接公共参数（B/C/D 的 mcp-remote 命令都要带，缺了必踩坑，已实测）**：
+> - `--allow-http`：mcp-remote 默认拒绝非 HTTPS 地址，裸 HTTP 端点必须显式加；
+> - `--transport http-only`：默认 `http-first` 会先发一个假 initialize（`mcp-remote-fallback-test`）探测 SSE，再开第二个真 session，与 FastMCP 的 session 管理冲突 → 后续调用全部 `400 Bad Request: Missing session ID`；`http-only` 纯 POST 直连完全兼容。
+> - 另外客户端握手必须串行：等 initialize 响应（session id 在响应头里）再发后续请求（自写测试脚本注意，正规 CLI 客户端如 pi 的 mcp-bridge 本身就是串行的）。
+
 ---
 
 ## A. Claude Code
@@ -62,7 +67,7 @@ Windows：
 ```toml
 [mcp_servers.sill-ensoul]
 command = "cmd"
-args = ["/c", "npx", "--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--header", "Authorization: Bearer <TOKEN>"]
+args = ["/c", "npx", "--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>"]
 startup_timeout_ms = 15000
 ```
 
@@ -71,7 +76,7 @@ Linux / macOS：
 ```toml
 [mcp_servers.sill-ensoul]
 command = "npx"
-args = ["--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--header", "Authorization: Bearer <TOKEN>"]
+args = ["--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>"]
 startup_timeout_ms = 15000
 ```
 
@@ -84,7 +89,7 @@ startup_timeout_ms = 15000
 
 1. 找到 sill-ensoul 的 MCP server 注册 —— 通常在 `~/.zcode/cli/config.json` 的 `servers.sill-ensoul` 键下（以你的实际配置文件为准），把现在的注册内容告诉我。
 2. 先把旧注册**原样备份**（如 `~/.zcode/sill-ensoul-mcp.backup.json`），告诉我备份路径。
-3. 把 sill-ensoul 的注册改成「stdio 命令桥接远程 HTTP」：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --header "Authorization: Bearer <TOKEN>"`，按你自己配置 schema 里注册一个 stdio server 的既有写法来放（Windows 下若命令名找不到，可加 `cmd /c` 包一层）。server 名保持 `sill-ensoul` 不变。
+3. 把 sill-ensoul 的注册改成「stdio 命令桥接远程 HTTP」：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你自己配置 schema 里注册一个 stdio server 的既有写法来放（Windows 下若命令名找不到，可加 `cmd /c` 包一层）。server 名保持 `sill-ensoul` 不变。
 4. 校验：配置文件是合法 JSON、结构正确；说明改了什么、备份在哪。
 5. 不要动你的 `AGENTS.md` 规则引用（薄壳只管规则，不管 MCP server 注册）。
 
@@ -94,7 +99,7 @@ startup_timeout_ms = 15000
 
 1. 找到本 CLI 里 sill-ensoul 的 MCP server 注册位置（你比任何人都清楚自己的配置放哪、什么格式），把现在的注册内容告诉我。
 2. 先把旧注册**原样备份**到不会被 git 跟踪的位置，告诉我备份路径。
-3. 把 sill-ensoul 的注册改成「stdio 命令桥接远程 HTTP」—— 这是任何 CLI 都通用的方式（不依赖各家对 http 的原生支持）：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --header "Authorization: Bearer <TOKEN>"`，按你既有 stdio server 注册的写法放。server 名保持 `sill-ensoul` 不变。
+3. 把 sill-ensoul 的注册改成「stdio 命令桥接远程 HTTP」—— 这是任何 CLI 都通用的方式（不依赖各家对 http 的原生支持）：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你既有 stdio server 注册的写法放。server 名保持 `sill-ensoul` 不变。
 4. 校验：配置文件格式合法、结构正确；说明改了什么、备份在哪。
 
 ---

@@ -140,6 +140,7 @@ cd /opt/sill-ensoul && tar -xf knowledge.tar && ls knowledge/agents/
 
 要点（提示词里已带，这里提醒）：
 - server 名保持 `sill-ensoul` 不变，只是把注册从 stdio 换成 HTTP；
+- **mcp-remote 桥接命令必带 `--allow-http --transport http-only`**（非 HTTPS 地址 mcp-remote 默认拒绝；默认 http-first 的 SSE 回退探测与 FastMCP session 管理冲突 → 400 Missing session ID，已实测，见 switch-to-remote.md 顶部公共参数说明）；
 - 改之前先把旧注册备份；
 - **改完必须完全退出该 CLI 再重开**（配置启动时加载，不热加载）；
 - 不要把填了真实值的提示词文件提交进任何 git 仓库（一律在仓库外副本上改）。

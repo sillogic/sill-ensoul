@@ -163,7 +163,9 @@ ENSOUL_MCP_TOKEN=... sill-ensoul-http      # 默认绑定 0.0.0.0:8930
   "headers": { "Authorization": "Bearer <token>" } }
 ```
 
-或走 stdio↔HTTP 桥：`npx mcp-remote http://<server>:8930/mcp --header "Authorization: Bearer <token>"`。
+或走 stdio↔HTTP 桥：
+`npx mcp-remote http://<server>:8930/mcp --allow-http --transport http-only --header "Authorization: Bearer <token>"`。
+`--allow-http` 必须加（mcp-remote 默认拒绝非 HTTPS 地址）；`--transport http-only` 必须加（默认 `http-first` 会先做 SSE 回退探测，与 FastMCP 的 session 管理冲突，所有调用报 `400 Bad Request: Missing session ID`）。
 
 > **安全提示**：token 是鉴权边界——别提交进仓库；传输层安全交给私有网络（Tailscale /
 > VPN / 防火墙）；stdio server（`sill-ensoul-mcp`）保持仅本机、无需 token。

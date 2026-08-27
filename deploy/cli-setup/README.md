@@ -24,6 +24,7 @@
 ## 共同要点（提示词里已带，这里提醒）
 
 - server 名保持 `sill-ensoul` 不变，只把注册从 stdio 换成 HTTP；
+- **mcp-remote 桥接命令必带 `--allow-http --transport http-only`**（mcp-remote 默认拒绝非 HTTPS 地址；默认 http-first 的 SSE 回退探测与 FastMCP session 管理冲突 → 400 Missing session ID，已实测）；
 - 改之前先备份旧注册（备份路径会在对话里告诉你）；
 - **改完必须完全退出该 CLI 再重开** —— 配置启动时加载，不热更新；
 - 不要把填了真实值的提示词文件提交进任何 git 仓库（一律在仓库外副本上改）；
