@@ -198,7 +198,7 @@ or via a stdio↔HTTP bridge (works for any CLI): `npx mcp-remote http://<server
 > **Security notes**: the token is the auth boundary — never commit it; prefer a private network (Tailscale / VPN / firewall) for transport security; the stdio server (`sill-ensoul-mcp`) stays local-only and needs no token. On a public network, front the server with TLS (Caddy/nginx reverse proxy) so the token is not sent in clear text.
 
 > **Full runbook**: step-by-step deployment, restart / upgrade / KB-migration / troubleshooting lives in [`docs/deployment.md`](docs/deployment.md).
-> **Client switch-over**: to point an existing local CLI at the remote server **without hand-editing configs**, hand each CLI its prompt file under [`deploy/cli-setup/`](deploy/cli-setup/README.md) — paste the contents into that CLI and let it update its own MCP registration (see `docs/deployment.md` §4).
+> **Client switch-over**: to point an existing local CLI at the remote server **without hand-editing configs**, paste the single prompt file [`deploy/cli-setup/switch-to-remote.md`](deploy/cli-setup/switch-to-remote.md) into that CLI — it identifies which CLI it is, applies the matching section, and updates its own MCP registration (see `docs/deployment.md` §4).
 
 ---
 
