@@ -41,10 +41,9 @@ wake up alter-ego      # or 唤醒 alter-ego / 唤醒分身
 
 `alter-ego` is your digital twin (default agent, empty memory). Accumulate experience with it first; once a domain (algorithm/backend/ ...) has enough, tell the CLI "create an agent called algo-engineer" for a specialized role.
 
-> **默认形态 = 本地单机**（上面这条 Quick Start）。sill-ensoul 默认就是一台电脑本地直连：零服务、零 token、记忆存在本机。**远程**（多人/多机共享一份记忆）是扩展形态，需要部署 HTTP 服务器 + 客户端接入——需要它再看下面的折叠表。
+> **默认形态 = 本地单机**（上面 Quick Start）：一台电脑本地直连，零服务、零 token、记忆在本机。**远程**（多人/多机共享一份记忆）是扩展形态——需要部署服务器 + 客户端接入，用下面的场景表选文件。
 
-<details>
-<summary>团队 / 多机共享记忆？选你的部署场景（展开）</summary>
+## Choose your deployment
 
 | # | 你的场景 | 要读的文件（按顺序） | 说明 |
 |---|---|---|---|
@@ -56,7 +55,6 @@ wake up alter-ego      # or 唤醒 alter-ego / 唤醒分身
 | Multica | 平台 agent 绑定（前提 MCP 已配好） | [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | 只做平台侧，不做 MCP 安装 |
 
 不确定？最简单的问题：**你手上有服务器地址+token 吗？** 有 → 场景 3/4；没有且只想自己用 → 场景 1（Quick Start）；想给同事用 → 场景 2。
-</details>
 
 <details>
 <summary>Don't want the AI to install? Manual 3 steps</summary>
@@ -219,7 +217,7 @@ or via a stdio↔HTTP bridge (works for any CLI):
 
 > **Full runbook**: step-by-step deployment, restart / upgrade / KB-migration / troubleshooting lives in [`docs/deployment.md`](docs/deployment.md).
 > **Client install (remote)**: to point a CLI at the remote server **without hand-editing configs**, paste the single prompt file [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) into that CLI — it identifies which CLI it is, applies the matching section, and registers the remote MCP endpoint itself (see `docs/deployment.md` §4).
-> **Not sure which file fits you?** See the [deployment scenarios table](#quick-start) (folded under Quick Start) — pick your scenario (local / self-hosted / join existing server / switch local→remote), it tells you the file order.
+> **Not sure which file fits you?** See [Choose your deployment](#choose-your-deployment) above — pick your scenario (local / self-hosted / join existing server / switch local→remote), it tells you the file order.
 
 ---
 
