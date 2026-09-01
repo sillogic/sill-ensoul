@@ -37,11 +37,19 @@
 | Claude Code | **A** | streamable-http 原生 |
 | Codex（desktop） | **B** | `npx mcp-remote` stdio↔HTTP 桥 |
 | zcode | **C** | `npx mcp-remote` stdio↔HTTP 桥 |
+| pi | **E** | 扩展（pi 无原生 MCP；先看 E 节） |
 | 其他任何 CLI | **D** | `npx mcp-remote` stdio↔HTTP 桥（通用） |
+
+> **机器标识（所有节都要带）**：除 `Authorization` 外，每个请求还必须带
+> `X-Machine-Id: <你的主机名>`（如 `X-Machine-Id: my-macbook`）。服务器靠它
+> 在记忆里标注"这条是谁写的"（frontmatter `machine:` 字段），共享 KB 的读者
+> 才能区分"谁写的"和"我在哪台机器"。不带则标 `unknown`。主机名获取：
+> Windows `echo %COMPUTERNAME%`，macOS/Linux `hostname`。
 
 > **mcp-remote 桥接公共参数（B/C/D 的 mcp-remote 命令都要带，缺了必踩坑，已实测）**：
 > - `--allow-http`：mcp-remote 默认拒绝非 HTTPS 地址，裸 HTTP 端点必须显式加；
 > - `--transport http-only`：默认 `http-first` 会先发一个假 initialize（`mcp-remote-fallback-test`）探测 SSE，再开第二个真 session，与 FastMCP 的 session 管理冲突 → 后续调用全部 `400 Bad Request: Missing session ID`；`http-only` 纯 POST 直连完全兼容。
+> - `--header "X-Machine-Id: <你的主机名>"`：机器标识（见上面公共说明），每个 `--header` 一项，Authorization 和 X-Machine-Id 各自单独一个 `--header`。
 > - 另外客户端握手必须串行：等 initialize 响应（session id 在响应头里）再发后续请求（自写测试脚本注意，正规 CLI 客户端如 pi 的 mcp-bridge 本身就是串行的）。
 
 ---
@@ -56,7 +64,10 @@
 { "mcpServers": { "sill-ensoul": {
   "type": "streamable-http",
   "url": "http://<服务器公网IP>:<端口>/mcp",
-  "headers": { "Authorization": "Bearer <TOKEN>" }
+  "headers": {
+    "Authorization": "Bearer <TOKEN>",
+    "X-Machine-Id": "<你的主机名>"
+  }
 } } }
 ```
 
@@ -77,7 +88,7 @@ Windows：
 ```toml
 [mcp_servers.sill-ensoul]
 command = "cmd"
-args = ["/c", "npx", "--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>"]
+args = ["/c", "npx", "--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>", "--header", "X-Machine-Id: <你的主机名>"]
 startup_timeout_ms = 15000
 ```
 
@@ -86,7 +97,7 @@ Linux / macOS：
 ```toml
 [mcp_servers.sill-ensoul]
 command = "npx"
-args = ["--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>"]
+args = ["--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>", "--header", "X-Machine-Id: <你的主机名>"]
 startup_timeout_ms = 15000
 ```
 
@@ -98,7 +109,7 @@ startup_timeout_ms = 15000
 
 1. 找到 sill-ensoul 的 MCP server 注册 —— 通常在 `~/.zcode/cli/config.json` 的 `servers.sill-ensoul` 键下（以你的实际配置文件为准），把现在的注册内容告诉我。
 2. 先把旧注册**原样备份**（如 `~/.zcode/sill-ensoul-mcp.backup.json`），告诉我备份路径。
-3. 把 sill-ensoul 的注册设置成「stdio 命令桥接远程 HTTP」：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你自己配置 schema 里注册一个 stdio server 的既有写法来放（Windows 下若命令名找不到，可加 `cmd /c` 包一层）。server 名保持 `sill-ensoul` 不变。
+3. 把 sill-ensoul 的注册设置成「stdio 命令桥接远程 HTTP」：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>" --header "X-Machine-Id: <你的主机名>"`，按你自己配置 schema 里注册一个 stdio server 的既有写法来放（Windows 下若命令名找不到，可加 `cmd /c` 包一层）。server 名保持 `sill-ensoul` 不变。
 4. 校验：配置文件是合法 JSON、结构正确；说明改了什么、备份在哪。
 
 ---
@@ -107,8 +118,35 @@ startup_timeout_ms = 15000
 
 1. 找到本 CLI 里 sill-ensoul 的 MCP server 注册位置（你比任何人都清楚自己的配置放哪、什么格式），把现在的注册内容告诉我。
 2. 先把旧注册**原样备份**到不会被 git 跟踪的位置，告诉我备份路径。
-3. 把 sill-ensoul 的注册设置成「stdio 命令桥接远程 HTTP」—— 这是任何 CLI 都通用的方式（不依赖各家对 http 的原生支持）：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>"`，按你既有 stdio server 注册的写法放。server 名保持 `sill-ensoul` 不变。
+3. 把 sill-ensoul 的注册设置成「stdio 命令桥接远程 HTTP」—— 这是任何 CLI 都通用的方式（不依赖各家对 http 的原生支持）：命令用 `npx`，参数为 `--yes mcp-remote http://<服务器公网IP>:<端口>/mcp --allow-http --transport http-only --header "Authorization: Bearer <TOKEN>" --header "X-Machine-Id: <你的主机名>"`，按你既有 stdio server 注册的写法放。server 名保持 `sill-ensoul` 不变。
 4. 校验：配置文件格式合法、结构正确；说明改了什么、备份在哪。
+
+---
+
+## E. pi
+
+**pi 没有原生 MCP 支持**（官方 README 明说 "No MCP"）——不读 `mcpServers` 配置，
+A–D 全部不适用。pi 的自定义工具只能靠**扩展**（`pi.registerTool()`）。
+
+1. 先检查本机有没有 sill-ensoul 扩展：`ls ~/.pi/agent/extensions/`，找 `mcp-bridge.ts`
+   或 `sill-ensoul.ts`。**扩展文件不在本仓库**（仓库 CLI-agnostic，不发布 per-CLI 扩展）——
+   如果本机没有，向你的 sill-ensoul owner 索取（从他已配置好的机器上复制），或按
+   `expertise/pi-mcp-config-landing` 现写一个自包含 streamable-http 客户端扩展。
+2. 扩展读 `~/.pi/agent/settings.json` 的 `mcpServers`。把 sill-ensoul 配成
+   mcp-remote 桥（与 D 节相同，Windows 用 `cmd /c` 包一层）：
+
+```json
+{ "mcpServers": { "sill-ensoul": {
+  "command": "cmd",
+  "args": ["/c", "npx", "--yes", "mcp-remote", "http://<服务器公网IP>:<端口>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <TOKEN>", "--header", "X-Machine-Id: <你的主机名>"],
+  "startupTimeoutMs": 60000
+} } }
+```
+
+   （macOS/Linux 去掉 `cmd` `/c` 两层即可。若扩展是自包含 HTTP 客户端而非 stdio 桥，
+   改在扩展自己的配置里加 `X-Machine-Id` header。）
+3. 扩展装好 + 配置写好后，**完全退出 pi 再重开**（扩展在 session_start 加载）。
+4. 校验：会话里调 `list_agents` 能返回服务端 KB 的 agent 列表 = 成功。
 
 ---
 
@@ -116,10 +154,14 @@ startup_timeout_ms = 15000
 
 上面只装了工具；要让本 CLI 学会 ensoul 工作流（唤醒分身 / 检索记忆 / 蒸馏沉淀），把
 [`ensoul/SHELL.md`](../../ensoul/SHELL.md) 的规则内容 **append**（不覆盖）进本 CLI 的
-指令文件（Claude Code 的 `~/.claude/CLAUDE.md`、zcode 的 `~/.zcode/AGENTS.md` 等，按你
-自己的机制）。已有 `<!-- SILL-ENSOUL-SHELL-START -->` 定界标记则说明已装过，跳过。
+指令文件（Claude Code 的 `~/.claude/CLAUDE.md`、zcode 的 `~/.zcode/AGENTS.md`、pi 的
+`~/.pi/agent/AGENTS.md` 等，按你自己的机制）。已有 `<!-- SILL-ENSOUL-SHELL-START -->`
+定界标记则说明已装过，跳过。
 > 远程接入不装本地包，所以**不用** `sill-ensoul-init --print-shell`——直接从
 > `ensoul/SHELL.md` 取内容即可。
+> **没有仓库访问权？** 把 `ensoul/SHELL.md` 的完整内容也粘贴给我（或让文件提供方
+> 发你一份），我把它 append 进指令文件——引用路径 `../../ensoul/SHELL.md` 是仓库内
+> 相对路径，我这边解析不到，必须有正文。
 
 ---
 

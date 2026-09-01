@@ -18,6 +18,7 @@ from __future__ import annotations
 import contextvars
 import os
 import re
+import socket
 import sqlite3
 import sys
 import tempfile
@@ -80,6 +81,41 @@ def base_kb_root() -> Path:
 # byte-for-byte unaffected. The only tool-layer change SIL-8 needs (D12).
 _identity_ctx: contextvars.ContextVar[str | None] = \
     contextvars.ContextVar("ensoul_identity", default=None)
+
+# Per-request MACHINE identity: the physical machine the CLIENT runs on,
+# injected by the HTTP middleware from the `X-Machine-Id` request header. A
+# shared remote KB is read/written by many machines; recording the writing
+# machine lets a reader tell "which machine wrote this" apart from "which
+# machine am I on" — otherwise words like "本机/this machine" inside old
+# entries become ambiguous across machines. None outside HTTP => falls back to
+# this host's hostname (stdio / admin CLI / tests are local by definition).
+_machine_ctx: contextvars.ContextVar[str | None] = \
+    contextvars.ContextVar("ensoul_machine", default=None)
+
+
+def current_machine() -> str:
+    """Physical machine bound to the current request, or this host's hostname.
+
+    HTTP: the value of the client's `X-Machine-Id` header (never the server's
+    own hostname — a remote client's machine is the thing we want). A remote
+    client that did NOT send the header reports 'unknown'. stdio / admin CLI /
+    tests run on the same machine as the KB, so the hostname is the correct
+    machine there."""
+    m = _machine_ctx.get()
+    if m is not None:
+        return m
+    return socket.gethostname()
+
+
+@contextmanager
+def request_machine(machine: str | None):
+    """Bind a machine identity for the duration of a request (HTTP middleware).
+    Safe to nest; the previous value is restored on exit."""
+    token = _machine_ctx.set(machine)
+    try:
+        yield
+    finally:
+        _machine_ctx.reset(token)
 
 
 def current_identity() -> str | None:
@@ -417,6 +453,10 @@ def write_concept(agent_id: str, concept_id: str, type: str,
     }
     if extra:
         fm.update(extra)
+    # The writing machine is auto-stamped and authoritative (after extra, so a
+    # caller can never forge/override it). Readers of a shared remote KB use
+    # this to tell "which machine wrote this" from "which machine am I on".
+    fm["machine"] = current_machine()
 
     f = _agent_dir(agent_id) / f"{concept_id}.md"
     # Lock serializes concurrent writers to the same concept (last-writer-wins
@@ -434,7 +474,7 @@ def append_log(agent_id: str, action: str, detail: str) -> dict:
     crash. Two layers, two jobs."""
     f = _agent_dir(agent_id) / "log.md"
     today = datetime.now().astimezone().strftime("%Y-%m-%d")
-    entry = f"* **{action}**: {detail}"
+    entry = f"* **{action}**: {detail} (machine: {current_machine()})"
     with _agent_lock(agent_id):
         text = f.read_text(encoding="utf-8") if f.exists() else "# Directory Update Log\n"
         if "# Directory Update Log" not in text:
