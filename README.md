@@ -22,19 +22,6 @@ Give your CLI agents experience that doesn't vanish when you switch projects, sw
 
 ---
 
-## Which deployment do you want? (pick your scenario first)
-
-| # | 你的场景 | 要读的文件（按顺序） | 说明 |
-|---|---|---|---|
-| 1 | **本地单机**：clone 仓库，本机 stdio 直连 | [`SETUP.md`](SETUP.md) | 装包 + 建 KB + 注册本地 MCP + 薄壳，一条消息搞定 |
-| 2 | **自建服务器**：服务器 clone + 部署，回电脑接入 | ① [`docs/deployment.md`](docs/deployment.md) ② [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 先部署服务器，再配电脑客户端连它 |
-| 3 | **连现成服务器**：别人已部署好，你只是接入 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | **不需要 clone 代码、不装本地包**；薄壳需向对方要 `SHELL.md` 正文 |
-| 4 | **原本地 → 切远程**：本机已用本地 stdio，改连现成服务器 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 旧注册会被备份后替换；本机旧 KB 闲置或按 deployment.md 迁移 |
-| 升级 | 已装过（本地或远程） | [`UPGRADE.md`](UPGRADE.md) 或 [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | 后者专用于补 `X-Machine-Id` 机器头（SIL-9） |
-| Multica | 平台 agent 绑定（前提 MCP 已配好） | [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | 只做平台侧，不做 MCP 安装 |
-
-不确定？最简单的问题：**你手上有服务器地址+token 吗？** 有 → 场景 3/4；没有且只想自己用 → 场景 1；想给同事用 → 场景 2。
-
 ## Quick Start
 
 After cloning, do **one** of these in your CLI (Claude Code / Codex / zcode / OpenCode, etc.):
@@ -53,6 +40,23 @@ wake up alter-ego      # or 唤醒 alter-ego / 唤醒分身
 ```
 
 `alter-ego` is your digital twin (default agent, empty memory). Accumulate experience with it first; once a domain (algorithm/backend/ ...) has enough, tell the CLI "create an agent called algo-engineer" for a specialized role.
+
+> **默认形态 = 本地单机**（上面这条 Quick Start）。sill-ensoul 默认就是一台电脑本地直连：零服务、零 token、记忆存在本机。**远程**（多人/多机共享一份记忆）是扩展形态，需要部署 HTTP 服务器 + 客户端接入——需要它再看下面的折叠表。
+
+<details>
+<summary>团队 / 多机共享记忆？选你的部署场景（展开）</summary>
+
+| # | 你的场景 | 要读的文件（按顺序） | 说明 |
+|---|---|---|---|
+| 1 | **本地单机**：clone 仓库，本机 stdio 直连 | [`SETUP.md`](SETUP.md) | 默认路径，见上面 Quick Start |
+| 2 | **自建服务器**：服务器 clone + 部署，回电脑接入 | ① [`docs/deployment.md`](docs/deployment.md) ② [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 先部署服务器，再配电脑客户端连它 |
+| 3 | **连现成服务器**：别人已部署好，你只是接入 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | **不需要 clone 代码、不装本地包**；薄壳需向对方要 `SHELL.md` 正文 |
+| 4 | **原本地 → 切远程**：本机已用本地 stdio，改连现成服务器 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 旧注册会被备份后替换；本机旧 KB 闲置或按 deployment.md 迁移 |
+| 升级 | 已装过（本地或远程） | [`UPGRADE.md`](UPGRADE.md) 或 [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | 后者专用于补 `X-Machine-Id` 机器头（SIL-9） |
+| Multica | 平台 agent 绑定（前提 MCP 已配好） | [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | 只做平台侧，不做 MCP 安装 |
+
+不确定？最简单的问题：**你手上有服务器地址+token 吗？** 有 → 场景 3/4；没有且只想自己用 → 场景 1（Quick Start）；想给同事用 → 场景 2。
+</details>
 
 <details>
 <summary>Don't want the AI to install? Manual 3 steps</summary>
@@ -215,7 +219,7 @@ or via a stdio↔HTTP bridge (works for any CLI):
 
 > **Full runbook**: step-by-step deployment, restart / upgrade / KB-migration / troubleshooting lives in [`docs/deployment.md`](docs/deployment.md).
 > **Client install (remote)**: to point a CLI at the remote server **without hand-editing configs**, paste the single prompt file [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) into that CLI — it identifies which CLI it is, applies the matching section, and registers the remote MCP endpoint itself (see `docs/deployment.md` §4).
-> **Not sure which file fits you?** See the [deployment scenarios table](#which-deployment-do-you-want-pick-your-scenario-first) at the top — pick your scenario (local / self-hosted / join existing server / switch local→remote), it tells you the file order.
+> **Not sure which file fits you?** See the [deployment scenarios table](#quick-start) (folded under Quick Start) — pick your scenario (local / self-hosted / join existing server / switch local→remote), it tells you the file order.
 
 ---
 
@@ -247,16 +251,24 @@ Four release tests, all green = core loop works (each builds its own temp KB, ru
 
 ---
 
-## Dig deeper
+## Documentation map（文件地图：谁读、管什么）
 
-- [docs/DESIGN.md](docs/DESIGN.md) — design background: why OKF, why MCP, comparison with mem0/letta/graphiti
-- [docs/ROADMAP.md](docs/ROADMAP.md) — progress + design decisions D1-D12 + historical pitfalls H1-H12
-- [docs/multica.md](docs/multica.md) — platform integration guide (Multica): wake-up block template, degradation rules, batch onboarding
-- [WORKFLOW.md](WORKFLOW.md) — CLI-agnostic workflow (wake/recall/distill/skill dispatch)
-- [SETUP.md](SETUP.md) — machine-readable adaptation intent for the CLI's AI (local MCP)
-- [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) — remote MCP CLI install intent
-- [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica platform-agent binding intent (premise: MCP already configured)
-- [UPGRADE.md](UPGRADE.md) — machine-readable upgrade intent for the CLI's AI
+| 文件 | 谁读 | 管什么 |
+|---|---|---|
+| [`README.md`](README.md) | 人 | 产品介绍 + Quick Start（本地默认）+ 部署场景决策表 |
+| [`SETUP.md`](SETUP.md) | CLI 的 AI | **本地**首次安装（装包→建 KB→注册 stdio→薄壳→验证） |
+| [`UPGRADE.md`](UPGRADE.md) | CLI 的 AI | **升级**已装实例（包 + 薄壳两部分，不动 KB） |
+| [`docs/deployment.md`](docs/deployment.md) | 人（服务器管理员） | **远程服务器端**部署 runbook（git 装 / env / systemd / KB 迁移 / 运维 / 排障） |
+| [`deploy/sill-ensoul-http.service`](deploy/sill-ensoul-http.service) | 人（服务器管理员） | **systemd 部署模板**（复制到服务器 `/etc/systemd/system/` 用，非运行时组件） |
+| [`deploy/cli-setup/README.md`](deploy/cli-setup/README.md) | 人 | 客户端接入提示词文件的索引（4 个文件 + 场景路由） |
+| [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | CLI 的 AI | **远程客户端**接入（首次接入 / 原本地切远程） |
+| [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | CLI 的 AI | 已接入客户端**补 `X-Machine-Id` 机器头**（SIL-9 升级） |
+| [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | CLI 的 AI | **Multica 平台** agent 绑定（前提：MCP 已配好） |
+| [`WORKFLOW.md`](WORKFLOW.md) | 人 | CLI-agnostic 工作流（唤醒/检索/蒸馏/skill 调度）权威源 |
+| [`ensoul/SHELL.md`](ensoul/SHELL.md) | CLI 的 AI（经薄壳） | 注入每个 CLI 指令文件的**薄壳规则**（含机器 banner） |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | 人 | 进度 + 设计决策 D1-D13 + 历史坑 H1-H21 |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | 人 | 设计背景：为什么 OKF / MCP，与 mem0/letta/graphiti 对比 |
+| [`docs/multica.md`](docs/multica.md) | 人 | Multica 平台集成指南（设计向；与 deploy/cli-setup/multica.md 的投喂文件互补） |
 
 ## License
 
