@@ -170,6 +170,21 @@
 
 ---
 
+### D13 — 机器身份：连接的固有属性，记忆自动打标（SIL-9）
+
+- **问题**（SIL-9，mac 冷启动接入 pi 后暴露）：多台机器通过远程 MCP 共享**同一份** KB 后，记忆正文里的「本机/这台机器」成了悬空相对词——写入时指写机器，跨机读取时模型会误当成读机器（在 Windows 上读到 mac 写的「本机 macOS 实装」会拿 mac 的状态冒充当前机器）。根因是双重的：① 会话里「我在哪台机器」这个环境事实不可见；② 记忆没有「写机器」元数据。修文档、修规范都是打地鼠，根治 = 让读机器和写机器都成为运行时事实。
+- **决策（连接级机器身份，一次落地永久受益）**：
+  - **协议**：客户端每个请求带 `X-Machine-Id: <hostname>` 头（与 `Authorization` 并列）。服务器中间件解析 → contextvar `okf.request_machine`（与 SIL-8 的 `request_identity` 同款口子，零重构）。**缺失 → `unknown`，绝不 fallback 服务器自身 hostname**（那会标成错的机器）；stdio（本机 sill-ensoul-mcp）无 HTTP → fallback `socket.gethostname()`（本地写即本机写，语义正确）。
+  - **写入自动打标**：`wiki_write_concept` 自动在 frontmatter 加 `machine:` 字段（在 extra 之后写入，**权威、不可伪造/覆盖**）；`wiki_append_log` 的 entry 也带 `(machine: <m>)`。写作者零负担，不需要自觉。
+  - **读机器常驻可见**：机器名是客户端本地事实，由本地注入最可靠——薄壳生成器（`--print-shell` / `--sync-shell`）在 SHELL 顶部注入 `<!-- SILL-ENSOUL-MACHINE -->` banner（`**Current machine**: <hostname>` + 语义解释），模型每会话必读薄壳 → 永远知道自己在哪台。SHELL.md 加 Machine awareness 规则（「本机」= 写机器 frontmatter.machine，不等于当前机器）。
+  - **闭环**：`frontmatter.machine (@mac)` ≠ `current machine (@zzj-hj-lp)` → 记忆里的「本机」指 mac，不是当前这台的。歧义在机制层消解，不靠模型聪明。
+- **落点**：`okf.py`（machine ctx + 打标）/ `http.py`（X-Machine-Id 解析 + unknown fallback）/ `init_cmd.py`（banner + print/sync 注入）/ `SHELL.md`（规则）/ `cli-remote.md`（全节 X-Machine-Id + 新 E 节 pi）+ 各 CLI 客户端配置加一个 header。
+- **迁移**：已接入机器各补一个 header（本机 settings.json 已加，重启生效；mac 自包含扩展待补）；新接入靠 cli-remote.md 自动带。旧记忆无 machine 字段 → 靠 banner 当前机器 + 记忆上下文推断，可接受，不重写。
+- **关联**：与 SIL-7/8 同构（身份=连接属性，机器=连接属性）；补上 remote-mcp-tailscale-plan 多机命名规则只覆盖「实例名」没覆盖「记忆正文」的空缺。
+- **状态**：✅ 已落地并测试（stdio→hostname / HTTP header→frontmatter / 缺失→unknown 三路断言全绿）。
+
+---
+
 ## 3. 问题清单
 
 > 状态图例：🔴 曾阻塞核心承诺 · 🟡 曾影响质量但不阻塞 · 🟢 已知限制 / 已决策
@@ -218,6 +233,7 @@
 | ~~9~~ | ~~**SIL-28 升级方式**~~ | ✅ 已落地 标准升级路径（UPGRADE.md + `--version` + `--sync-shell` 复用） | 升级 = 包 + 薄壳两部分；KB 永不触碰；不做自升级脚本（D10） |
 | ~~10~~ | ~~**SIL-7 MCP 鉴权**~~ | ✅ 已落地 远程 HTTP 部署（`ensoul/http.py`：Streamable HTTP + Bearer token，单租户 fail-closed，多租户留「身份→KB 根」映射口子） | 鉴权 = 连接层「谁能连」，与多租户正交；多机实例命名改为「分身id@机器」；D11 |
 | ~~11~~ | ~~**SIL-8 多租户 Phase 1**~~ | ✅ 已落地 用户表 + admin CLI + md 接入卡（`ensoul/users.py` + `sill-ensoul-admin`，token 只存哈希；owner token 向后兼容；http 口子打通；tenant KB 根隔离端到端测试） | 工具层仅 `okf.kb_root()` 按 contextvar 身份解析一处改动；接入卡复用 SIL-35 A–D 分节 + Multica 分节；D12 |
+| ~~12~~ | ~~**SIL-9 机器身份（多机记忆「本机」歧义根治）**~~ | ✅ 已落地 `X-Machine-Id` header → contextvar → 写入自动打标 frontmatter `machine:` + 薄壳注入 `current machine` banner + SHELL.md 规则 + cli-remote.md 全节/pi 节（D13） | 三路断言全绿（stdio→hostname / header→frontmatter / 缺失→unknown）；已接入机器补一个 header，新接入自动带 |
 | — | **新 CLI 接入** | Claude/Codex 复制 (c) 薄壳 | 机械工作，需要时做 |
 | — | PyPI 发布（可选） | `pip install sill-ensoul` 一行装 | 目前从 GitHub 装；发 PyPI 只加发版动作，不改代码，有需要再做 |
 

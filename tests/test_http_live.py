@@ -150,7 +150,13 @@ async def test_e2e():
 
                 async with streamablehttp_client(
                         url,
-                        headers={"Authorization": f"Bearer {TOKEN}"}) \
+                        headers={
+                            "Authorization": f"Bearer {TOKEN}",
+                            # Machine-aware memory (SIL-9): the client reports
+                            # which machine it runs on; the server stamps it
+                            # into every concept's frontmatter.
+                            "X-Machine-Id": "test-http-client",
+                        }) \
                         as (read, write, _get_session_id):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
@@ -190,7 +196,31 @@ async def test_e2e():
                         c = await call("wiki_read", agent_id=FIXTURE_AGENT,
                                        concept_id=hits[0]["concept_id"])
                         assert c["frontmatter"].get("type"), "missing 'type'"
-                        print("[e2e] wiki_read OK")
+                        # X-Machine-Id header must land in frontmatter.
+                        assert c["frontmatter"].get("machine") == "test-http-client", \
+                            c["frontmatter"]
+                        print("[e2e] machine stamping OK "
+                              "(X-Machine-Id -> frontmatter.machine)")
+
+                        # A client that sends NO X-Machine-Id must degrade to
+                        # 'unknown' — never to the SERVER's own hostname.
+                        async with streamablehttp_client(
+                                url,
+                                headers={"Authorization": f"Bearer {TOKEN}"}) \
+                                as (read2, write2, _sid2):
+                            async with ClientSession(read2, write2) as s2:
+                                await s2.initialize()
+                                r = await s2.call_tool("wiki_write_concept", {
+                                    "agent_id": FIXTURE_AGENT,
+                                    "concept_id": "projects/no-machine",
+                                    "type": "Project",
+                                    "title": "no machine header",
+                                    "body": "written without X-Machine-Id",
+                                })
+                                c2 = json.loads(r.content[0].text)
+                                assert c2["frontmatter"].get("machine") == "unknown", \
+                                    c2["frontmatter"]
+                        print("[e2e] missing X-Machine-Id -> 'unknown' OK")
             finally:
                 server.should_exit = True
                 await task

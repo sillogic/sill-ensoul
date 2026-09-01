@@ -22,6 +22,14 @@ Multi-tenant seam (SIL-8, Phase 1 BUILT): a valid token maps to an identity
  resolve their KB root per-request via okf.kb_root() — the auth protocol and
  the tool layer stay unchanged. See docs/ROADMAP.md D11/D12.
 
+Machine-aware memory (SIL-9): a shared remote KB is written from several
+machines. Clients report which physical machine they run on via the
+`X-Machine-Id` request header; the middleware injects it into
+okf.request_machine() for the duration of the request, and write tools
+auto-stamp it into every concept's frontmatter (`machine:` field) so a reader
+anywhere can tell "which machine wrote this" from "which machine am I on".
+Absent header => 'unknown' (never the server's own hostname).
+
 Run (console script):  sill-ensoul-http [--host H] [--port P]
 or:                     python -m ensoul.http [--host H] [--port P]
 
@@ -140,11 +148,24 @@ class _BearerAuthMiddleware:
             await send({"type": "http.response.body", "body": body})
             return
         scope["ensoul_identity"] = identity
+        # Machine identity (SIL-9 / machine-aware memory): the client reports
+        # which physical machine it runs on via `X-Machine-Id`. It is bound for
+        # the duration of the request exactly like the identity, so write tools
+        # auto-stamp it into frontmatter (`machine:` field) and readers can
+        # tell "who wrote this" from "where am I". Absent => 'unknown' (never
+        # fall back to THIS server's hostname — that would be the wrong
+        # machine).
+        machine = next(
+            (v.decode("utf-8", "replace").strip()
+             for k, v in scope.get("headers", [])
+             if k.lower() == b"x-machine-id"),
+            "",
+        ) or "unknown"
         # Inject the identity for the duration of this request: okf.kb_root()
         # resolves per-request, so the 8 tools read/write the right tenant root
         # with ZERO changes to the tool layer (D12). anyio's to_thread copies
         # the current context, so sync tool handlers see it too.
-        with okf.request_identity(identity):
+        with okf.request_identity(identity), okf.request_machine(machine):
             await self.app(scope, receive, send)
 
 

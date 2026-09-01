@@ -12,6 +12,7 @@ import functools
 import importlib.metadata
 import importlib.resources as resources
 import shutil
+import socket
 import sys
 from pathlib import Path
 from typing import TypedDict
@@ -30,6 +31,32 @@ def _load_shell() -> str:
 
 _SHELL_START_MARKER = "<!-- SILL-ENSOUL-SHELL-START -->"
 _SHELL_END_MARKER = "<!-- SILL-ENSOUL-SHELL-END -->"
+
+# Machine identity line injected into every installed shell (SIL-9). The shell
+# file is per-machine (each CLI's instruction file lives on that machine), so
+# stamping the local hostname here gives every session an always-visible
+# answer to "which physical machine am I on" — without it, a shared remote KB
+# makes words like "本机/this machine" in memory entries ambiguous.
+_MACHINE_MARKER_START = "<!-- SILL-ENSOUL-MACHINE -->"
+_MACHINE_MARKER_END = "<!-- /SILL-ENSOUL-MACHINE -->"
+
+
+def _machine_banner() -> str:
+    host = socket.gethostname()
+    return (
+        f"{_MACHINE_MARKER_START}\n"
+        f"**Current machine**: `{host}` — this session runs on this physical "
+        f"machine. Memory entries record their WRITING machine in frontmatter "
+        f"`machine:` (auto-stamped by the server); \"本机/this machine\" in old "
+        f"entries refers to the writer, not necessarily this one. In a shared "
+        f"remote KB, never assume \"this machine\" equals the writer.\n"
+        f"{_MACHINE_MARKER_END}"
+    )
+
+
+def _shell_content() -> str:
+    """Shell body (rules) + the machine banner, ready to install or print."""
+    return f"{_machine_banner()}\n\n{_load_shell().strip()}"
 
 
 def _package_version() -> str:
@@ -104,8 +131,7 @@ _DEFAULT_PERSONA = """# 身份
 
 
 def _marked_shell() -> str:
-    shell = _load_shell().strip()
-    return f"{_SHELL_START_MARKER}\n{shell}\n{_SHELL_END_MARKER}"
+    return f"{_SHELL_START_MARKER}\n{_shell_content()}\n{_SHELL_END_MARKER}"
 
 
 def _update_shell_file(path: Path, name: str) -> str:
@@ -290,7 +316,7 @@ def main() -> int:
         return 0
 
     if args.print_shell:
-        print(_load_shell())
+        print(_shell_content())
         return 0
 
     if args.sync_shell:

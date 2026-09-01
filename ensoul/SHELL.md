@@ -84,6 +84,16 @@ professional role need not trigger it.
    install it themselves (don't install, don't probe, don't guess). Only distill
    experience you've actually used and found good.
 
+**Machine awareness**: you run on one physical machine; its name is stamped at
+the top of this shell by the installer. Every concept/log written through the
+tools records its WRITING machine in frontmatter `machine:` (auto-stamped by
+the server — never fake or omit it). A shared remote KB is written from many
+machines, so when an old entry says "本机/this machine", it means the machine
+that WROTE it (its `machine:` value), not necessarily the one you are on.
+Before claiming "this machine has X installed / is configured", check the
+actual current machine (banner above) and read the entry's `machine:` field —
+do not assume an entry written on another machine describes this one.
+
 **Known traps**:
 - **Context compaction / session restart can drop the active-agent state**, which
   also drops the downstream distillation rule from attention. When identity is

@@ -92,6 +92,15 @@ async def main():
                       f"type={c['frontmatter'].get('type')}, body: {body_preview}...")
                 assert c["frontmatter"].get("type"), "concept missing required 'type'"
 
+                # Machine-aware memory (SIL-9): stdio runs on the same machine
+                # as the KB, so the writing machine must stamp the local
+                # hostname (no X-Machine-Id in stdio — there is no HTTP).
+                import socket
+                assert c["frontmatter"].get("machine") == socket.gethostname(), \
+                    (f"stdio write must stamp local hostname, got "
+                     f"{c['frontmatter'].get('machine')!r}")
+                print(f"[8] machine stamping OK (stdio -> {socket.gethostname()})")
+
                 print("\nMCP LIVE GOOD. server.py works standalone (D1 holds).")
 
 

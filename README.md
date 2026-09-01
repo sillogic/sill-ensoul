@@ -190,12 +190,13 @@ Point a CLI's MCP config at it (streamable-http clients send the header on every
 
 ```jsonc
 { "type": "streamable-http", "url": "http://<server>:8930/mcp",
-  "headers": { "Authorization": "Bearer <token>" } }
+  "headers": { "Authorization": "Bearer <token>",
+                "X-Machine-Id": "<your-hostname>" } }
 ```
 
 or via a stdio↔HTTP bridge (works for any CLI):
-`npx mcp-remote http://<server>:8930/mcp --allow-http --transport http-only --header "Authorization: Bearer <token>"`.
-`--allow-http` is required because mcp-remote refuses plain-HTTP URLs by default; `--transport http-only` avoids mcp-remote's SSE-fallback probe (its default `http-first` strategy), which conflicts with FastMCP's streamable-HTTP session handling and fails every call with `400 Bad Request: Missing session ID`.
+`npx mcp-remote http://<server>:8930/mcp --allow-http --transport http-only --header "Authorization: Bearer <token>" --header "X-Machine-Id: <your-hostname>"`.
+`--allow-http` is required because mcp-remote refuses plain-HTTP URLs by default; `--transport http-only` avoids mcp-remote's SSE-fallback probe (its default `http-first` strategy), which conflicts with FastMCP's streamable-HTTP session handling and fails every call with `400 Bad Request: Missing session ID`. The `X-Machine-Id` header is the machine identity (SIL-9): the server stamps it into every concept's frontmatter `machine:` field, so readers of a shared remote KB can tell "which machine wrote this" from "which machine am I on".
 
 > **Security notes**: the token is the auth boundary — never commit it; prefer a private network (Tailscale / VPN / firewall) for transport security; the stdio server (`sill-ensoul-mcp`) stays local-only and needs no token. On a public network, front the server with TLS (Caddy/nginx reverse proxy) so the token is not sent in clear text.
 
