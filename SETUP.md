@@ -2,9 +2,10 @@
 
 > **你是哪种用户？先选对文件（SIL-8 文档拆分定案）：**
 > - **本地直连 MCP**（本机 stdio，默认路径）→ 读**本文件**（SETUP.md）。
-> - **远程 MCP**（连服务器 / 接入卡用户）→ 读 [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md)。
+> - **远程 MCP**（连服务器 / 接入卡用户）→ 读 [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md)。**连现成服务器不需要 clone 代码、不装本地包**；原本地用户切换过来时旧注册会被备份替换，本机旧 KB 闲置或按 deployment.md 迁移。
+> - **远程 MCP 已装过，只缺机器身份头** → 读 [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md)（给已有注册补 `X-Machine-Id`，SIL-9）。
 > - **Multica 平台 agent**（前提：本机 CLI 已配好 MCP）→ 读 [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md)。
-> 三个文件各管一种场景，一份文件想写全反而难维护。
+> 四个文件各管一种场景，一份文件想写全反而难维护。
 
 > **Who reads this**: the AI inside the user's CLI (Claude Code / Codex / zcode / OpenCode /
 > any MCP-capable CLI). The user got this content to you in one of two ways:

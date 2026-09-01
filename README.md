@@ -22,6 +22,19 @@ Give your CLI agents experience that doesn't vanish when you switch projects, sw
 
 ---
 
+## Which deployment do you want? (pick your scenario first)
+
+| # | 你的场景 | 要读的文件（按顺序） | 说明 |
+|---|---|---|---|
+| 1 | **本地单机**：clone 仓库，本机 stdio 直连 | [`SETUP.md`](SETUP.md) | 装包 + 建 KB + 注册本地 MCP + 薄壳，一条消息搞定 |
+| 2 | **自建服务器**：服务器 clone + 部署，回电脑接入 | ① [`docs/deployment.md`](docs/deployment.md) ② [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 先部署服务器，再配电脑客户端连它 |
+| 3 | **连现成服务器**：别人已部署好，你只是接入 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | **不需要 clone 代码、不装本地包**；薄壳需向对方要 `SHELL.md` 正文 |
+| 4 | **原本地 → 切远程**：本机已用本地 stdio，改连现成服务器 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 旧注册会被备份后替换；本机旧 KB 闲置或按 deployment.md 迁移 |
+| 升级 | 已装过（本地或远程） | [`UPGRADE.md`](UPGRADE.md) 或 [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | 后者专用于补 `X-Machine-Id` 机器头（SIL-9） |
+| Multica | 平台 agent 绑定（前提 MCP 已配好） | [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | 只做平台侧，不做 MCP 安装 |
+
+不确定？最简单的问题：**你手上有服务器地址+token 吗？** 有 → 场景 3/4；没有且只想自己用 → 场景 1；想给同事用 → 场景 2。
+
 ## Quick Start
 
 After cloning, do **one** of these in your CLI (Claude Code / Codex / zcode / OpenCode, etc.):
@@ -202,6 +215,7 @@ or via a stdio↔HTTP bridge (works for any CLI):
 
 > **Full runbook**: step-by-step deployment, restart / upgrade / KB-migration / troubleshooting lives in [`docs/deployment.md`](docs/deployment.md).
 > **Client install (remote)**: to point a CLI at the remote server **without hand-editing configs**, paste the single prompt file [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) into that CLI — it identifies which CLI it is, applies the matching section, and registers the remote MCP endpoint itself (see `docs/deployment.md` §4).
+> **Not sure which file fits you?** See the [deployment scenarios table](#which-deployment-do-you-want-pick-your-scenario-first) at the top — pick your scenario (local / self-hosted / join existing server / switch local→remote), it tells you the file order.
 
 ---
 
