@@ -3,6 +3,7 @@
 > **你是哪种用户？先选对文件（SIL-8 文档拆分定案）：**
 > - **本地直连 MCP**（本机 stdio，默认路径）→ 读 [`SETUP.md`](../../SETUP.md)。
 > - **远程 MCP**（连服务器 / 接入卡用户）→ 读**本文件**（CLI 安装）。
+> - **远程 MCP 已装过，只缺机器身份头** → 读 [`update-machine-id.md`](update-machine-id.md)（给已有注册补 `X-Machine-Id`，SIL-9）。
 > - **Multica 平台 agent**（前提：本机 CLI 已配好 MCP）→ 读 [`multica.md`](multica.md)。
 > 三个文件各管一种场景，一份文件想写全反而难维护。
 
