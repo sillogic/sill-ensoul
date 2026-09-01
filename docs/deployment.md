@@ -216,7 +216,7 @@ KB 不在默认位置时加 `--kb <路径>`（或设 `ENSOUL_KB`）。
 | 环境变量文件 | `/etc/sill-ensoul/env`（root-only, chmod 600） |
 | systemd unit | `deploy/sill-ensoul-http.service` |
 | 环境变量模板 | `.env.example` |
-| 客户端提示词 | `deploy/cli-setup/cli-remote.md` |
+| 客户端提示词 | `deploy/cli-setup/cli-remote.md`（首次接入）/ `deploy/cli-setup/update-machine-id.md`（补 X-Machine-Id） |
 | KB 根 | `ENSOUL_KB`，示例 `/opt/sill-ensoul/knowledge` |
 | 源码 | https://github.com/sillogic/sill-ensoul （从 git 装，未发布 PyPI） |
 
