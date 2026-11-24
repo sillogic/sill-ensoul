@@ -41,6 +41,23 @@ CLI 的 AI 会按 [SETUP.md](SETUP.md)：装包 → 建知识库 → 建默认 a
 
 `alter-ego` 是你的数字分身（默认 agent，空记忆）。先用它积累经验，攒够某个领域（算法/后端/…）后，对 CLI 说"帮我建一个叫 algo-engineer 的 agent"分裂出专门 ensouler。
 
+> **推荐形态 = 远程 MCP**（多人 / 多机共享一份记忆）：服务器跑一个 `sill-ensoul-http`，每个 CLI 只是客户端——**不 clone 代码、不装 Python 包、不建本地 KB**，只要一个地址 + 一个 token。上面的 Quick Start 是**本机单机**形态（离线 / 只给自己用，零服务零 token）。
+>
+> **给朋友 / 同事开账号**：owner 在服务器上 `sill-ensoul-admin user create` 生成接入卡，把卡片和 [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) 给对方，他自己在 CLI 里粘一句就接完（不需要仓库访问权）。
+
+## 选择部署形态
+
+| # | 你的场景 | 要读的文件（按顺序） | 说明 |
+|---|---|---|---|
+| 1 | **连现成服务器**（最常见：朋友 / 同事 / 多机自己用） | [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) | **不需要 clone 代码、不装本地包**；只要有地址 + token。薄壳向对方要 `SHELL.md` 正文 |
+| 2 | **自建服务器** | ① [docs/deployment.md](docs/deployment.md) ② [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) | 先部署服务器（含 `sill-ensoul-admin user create` 开账号），再配客户端 |
+| 3 | **本地单机** | [SETUP.md](SETUP.md) | 离线 / 只给自己用；上面 Quick Start 就是这条 |
+| 4 | **原本地 → 切远程** | [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) | 旧注册备份后替换；本机旧 KB 闲置或按 deployment.md 迁移 |
+| 升级 | 已装过（本地或远程） | [UPGRADE.md](UPGRADE.md) 或 [deploy/cli-setup/update-machine-id.md](deploy/cli-setup/update-machine-id.md) | 后者专用于补 `X-Machine-Id` 机器头（SIL-9） |
+| Multica | 平台 agent 绑定 | [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) | 只做平台侧，不做 MCP 安装 |
+
+不确定？最简单的问题：**你手上有服务器地址 + token 吗？** 有 → 场景 1（或 4）；没有、想自己一个人用 → 场景 3；想给同事开一份共享记忆 → 场景 2。
+
 <details>
 <summary>不想让 AI 装包？手动 3 步</summary>
 
@@ -76,7 +93,8 @@ sill-ensoul-init               # 建全局 KB + 默认 agent alter-ego
 |---|---|
 | `sill-ensoul-init` | 初始化全局 KB + 默认 `alter-ego` agent（幂等）。 |
 | `sill-ensoul-init --print-shell` | 打印 CLI 无关的薄壳内容，供手动追加到 CLI 指令文件。 |
-| `sill-ensoul-init --sync-shell` | 自动更新已支持 CLI 指令文件里的 sill-ensoul 薄壳段（Claude Code、Zcode、Codex、OpenCode）。 |
+| `sill-ensoul-init --sync-shell` | 自动更新已支持 CLI 指令文件里的 sill-ensoul 薄壳段（Claude Code、Zcode、Codex、OpenCode、pi）。 |
+| `sill-ensoul-admin user create \| list \| revoke \| reset` | 仅远程部署：创建 / 列出 / 吊销 / 重置租户用户，并生成可直接转发的接入卡（URL + token + 分 CLI 小节）。 |
 | `sill-ensoul-init --rebuild-index` | 为每个 agent 从 `.md` 权威源重建 SQLite FTS 索引。 |
 | `sill-ensoul-init --version` | 打印已安装包版本（升级前检查用）。 |
 
@@ -207,7 +225,7 @@ python -m tests.run_tests
 - [docs/multica.md](docs/multica.md) — 平台集成指南（Multica）：唤醒块模板、降级规则、批量上架模式
 - [WORKFLOW.md](WORKFLOW.md) — CLI 无关的工作流权威版（唤醒/召回/沉淀/skill 调度）
 - [SETUP.md](SETUP.md) — 给 CLI 的 AI 读的适配意图（机器可读，本地 MCP）
-- [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) — 远程 MCP CLI 安装意图
+- [deploy/cli-setup/cli-remote.md](deploy/cli-setup/cli-remote.md) — 远程 MCP CLI 安装意图（Claude Code / Codex / zcode / pi / 其他，含已验证版本与踩坑）
 - [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica 平台 agent 绑定意图（前提：MCP 已配好）
 - [UPGRADE.md](UPGRADE.md) — 给 CLI 的 AI 读的升级意图（机器可读）
 

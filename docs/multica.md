@@ -42,10 +42,10 @@ ensoul 与 Multica **无结构性冲突，分层互补**：
 
 | 路径 | 状态 | 说明 |
 |---|---|---|
-| **CLI/runtime 级安装**（主路径） | ✅ 定案 + 本机已实装 | 把 sill-ensoul 装进每个被 Multica 识别到的 CLI（pi 扩展 bridge / `claude mcp add` / opencode mcp / …）；per-runtime 注入 → 该 runtime 上所有 agent 自动有工具。幂等（已装跳过）+ 版本检查（旧了升级，UPGRADE.md） |
+| **CLI/runtime 级安装**（主路径） | ✅ 定案 + 本机已实装 | 把 sill-ensoul 装进每个被 Multica 识别到的 CLI（pi 原生 `mcp.json` / `claude mcp add` / codex `--url` / opencode mcp / …）；per-runtime 注入 → 该 runtime 上所有 agent 自动有工具。幂等（已装跳过）+ 版本检查（旧了升级，UPGRADE.md） |
 | **平台 MCP 库**（未来选项） | ⏸ 暂缓 | `multica workspace mcp add` + `agent mcp add`（admin/owner 操作，agent 被服务端硬拒）；价值场景（远程/多 runtime 并存/多机）全在暂缓边界内，不提前做 |
 
-版本对齐（SIL-26 复核）：一台机器一个 server 版本一个 KB —— pip 安装 `sill-ensoul` v0.3.0 == 仓库 v0.3.0，无漂移。
+版本对齐（SIL-26 复核；SILL-415 收尾修订）：一台机器一个 server 版本一个 KB —— 版本号**只有一个权威源** `pyproject.toml`（0.5.0），`ensoul/__init__.py` 从包元数据读、不再硬编码；核对方式 `sill-ensoul-init --version` == 仓库 `pyproject.toml`。
 
 **新人安装流程（setupmd）**见 §3.3；[`deploy/cli-setup/multica.md`](../deploy/cli-setup/multica.md) 是可执行版本（前提：本机 CLI 已配好 MCP）。装好后用 `multica agent get` 确认 agent 能调 `list_agents` / `agent_index`。
 
@@ -79,7 +79,7 @@ MCP，但担心「装了 ensoul 的 multica 调装了 ensoul 的 CLI」出问题
   setup 时一次性装齐保证（§3.3 setupmd，SIL-26 定案），不是每次唤醒的前提。嵌套 CLI 本来
   就不承担记忆层（约定 1），唤醒时发现缺 ensoul → 按降级规则继续干活 + 报告一句即可；每次
   唤醒自动装 = 无需求也装，反而把「两个心智写同一分身」的风险重新引入，还欠版本钉死
-  （pip v0.3.0 == 仓库 v0.3.0）、幂等、静默改用户机器三笔账。嵌套确实要用 ensoul 的
+  （版本号单一权威源 `pyproject.toml`，`--version` 与仓库对齐）、幂等、静默改用户机器三笔账。嵌套确实要用 ensoul 的
   场景（换 agent_id 的会话）走一次性安装（`pip install sill-ensoul`）；自动化的正确形态
   是 bootstrap —— §3.3 setupmd 就是它（setup 时一步装齐 + 幂等 + 版本检查），不是运行时
   magic。
