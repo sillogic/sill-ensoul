@@ -31,9 +31,9 @@ sill-ensoul 的服务器现在给每条记忆自动打标 `machine:` 字段（�
 | 你是 | 走哪节 | 你的注册长什么样 |
 |---|---|---|
 | Claude Code | **A** | `~/.claude.json` 或项目 `.mcp.json` 里 `type: streamable-http` |
-| Codex（desktop） | **B** | `~/.codex/config.toml` 里 `[mcp_servers.sill-ensoul]` |
+| Codex（desktop） | **B** | `~/.codex/config.toml` 里 `[mcp_servers.sill-ensoul]`（`url` + `http_headers`） |
 | zcode | **C** | `~/.zcode/cli/config.json` 里 `servers.sill-ensoul` |
-| pi | **E** | `~/.pi/agent/settings.json` 里 `mcpServers.sill-ensoul` |
+| pi（1.x） | **E** | `~/.pi/agent/mcp.json` 里 `mcpServers.sill-ensoul`（原生 streamable HTTP） |
 | 其他任何 CLI | **D** | 你的 CLI 的 stdio server 注册（命令是 `npx mcp-remote ...`） |
 
 先**核对**（所有节通用）：找到 sill-ensoul 注册后，如果它的配置里**已经有**
@@ -67,8 +67,21 @@ sill-ensoul 的服务器现在给每条记忆自动打标 `machine:` 字段（�
 ## B. Codex（desktop）
 
 1. 打开 `~/.codex/config.toml`，找到 `[mcp_servers.sill-ensoul]` 段，告诉我现在的样子。
-2. 在 args 里**追加**两个元素：`"--header"` 和 `"X-Machine-Id: <你的主机名>"`
-   （注意：`Authorization` 的 `--header` 保持不动，X-Machine-Id 是新增的一组），得到类似：
+2. **原生 `url` 写法**（推荐，2026-11 实测）：在它的 `http_headers` 子表里**新增**
+   `X-Machine-Id` 一行（`Authorization` 保持不动）：
+
+```toml
+[mcp_servers.sill-ensoul]
+url = "http://<你现有的服务器地址>/mcp"
+startup_timeout_sec = 60
+
+[mcp_servers.sill-ensoul.http_headers]
+Authorization = "Bearer <你现有的TOKEN>"
+X-Machine-Id = "<你的主机名>"
+```
+
+   **旧版（mcp-remote 桥）写法**：在 args 里追加 `"--header"` 和
+   `"X-Machine-Id: <你的主机名>"` 两个元素（`Authorization` 那组保持不动）：
 
 ```toml
 [mcp_servers.sill-ensoul]
@@ -77,9 +90,8 @@ args = ["/c", "npx", "--yes", "mcp-remote", "http://<你现有的服务器地址
 startup_timeout_ms = 15000
 ```
 
-   （macOS / Linux 去掉 `cmd`、`/c` 两层即可，结构一样。）
-3. 校验：config.toml 是合法 TOML，原来的参数原样保留，只多了 `X-Machine-Id` 一组
-   `--header`。改前备份（如 `~/.codex/sill-ensoul-mcp.backup.toml`），告诉我备份路径。
+3. 校验：config.toml 是合法 TOML；`codex mcp list` 里 `sill-ensoul` 仍是 enabled。
+   改前备份（如 `~/.codex/sill-ensoul-mcp.backup.toml`），告诉我备份路径。
 
 ---
 
@@ -107,23 +119,27 @@ startup_timeout_ms = 15000
 
 ---
 
-## E. pi（settings.json 的 mcpServers）
+## E. pi（原生 mcp.json）
 
-1. 打开 `~/.pi/agent/settings.json`，找到 `mcpServers.sill-ensoul`，告诉我现在的样子。
-2. 在 `args` 里**追加**两个字符串：`"--header"`、`"X-Machine-Id: <你的主机名>"`
-   （紧跟 `Authorization` 那组之后），得到类似：
+1. 打开 `~/.pi/agent/mcp.json`，找到 `mcpServers.sill-ensoul`，告诉我现在的样子。
+   （项目级是 `.pi/mcp.json`。**不是** `settings.json` —— 那是旧扩展时代的位置。）
+2. 在它的 `headers` 里**新增** `X-Machine-Id` 一行（`Authorization` 保持不动）：
 
 ```json
 { "mcpServers": { "sill-ensoul": {
-  "command": "cmd",
-  "args": ["/c", "npx", "--yes", "mcp-remote", "http://<你现有的服务器地址>/mcp", "--allow-http", "--transport", "http-only", "--header", "Authorization: Bearer <你现有的TOKEN>", "--header", "X-Machine-Id: <你的主机名>"],
-  "startupTimeoutMs": 60000
+  "url": "http://<你现有的服务器地址>/mcp",
+  "headers": {
+    "Authorization": "Bearer ${ENSOUL_MCP_TOKEN}",
+    "X-Machine-Id": "<你的主机名>"
+  },
+  "exposure": "direct"
 } } }
 ```
 
-   （macOS / Linux 去掉 `cmd`、`/c` 两层即可。若你的 pi 用的是自包含 HTTP 客户端扩展
-   而非 mcp-remote 桥，在扩展自己的配置里加 `X-Machine-Id` header。）
-3. 校验：settings.json 是合法 JSON，原有配置不动，只多了 X-Machine-Id 一组。改前备份，告诉我路径。
+   旧版（pi < 1.0 靠扩展 + `settings.json.mcpServers` + mcp-remote 桥）：在 `args` 里
+   追加 `"--header"`、`"X-Machine-Id: <你的主机名>"` 两个字符串。已有原生注册时建议直接
+   迁到上面写法，并把旧桥注册删掉（同名双开会出两套工具）。
+3. 校验：mcp.json 是合法 JSON；`pi mcp list` 显示已连接。改前备份，告诉我路径。
 
 ---
 

@@ -96,6 +96,12 @@ _CLI_TARGETS: list[_CLITarget] = [
         "name": "OpenCode",
         "path": Path.home() / ".config" / "opencode" / "AGENTS.md",
     },
+    {
+        # pi 1.x 的原生 MCP 配在 ~/.pi/agent/mcp.json；薄壳（工作流规则）在
+        # ~/.pi/agent/AGENTS.md —— 两个不同文件，别混（2026-11 实测）。
+        "name": "pi",
+        "path": Path.home() / ".pi" / "agent" / "AGENTS.md",
+    },
 ]
 
 
