@@ -22,7 +22,7 @@
 
 ---
 
-## Quick Start
+## 快速开始
 
 clone 仓库后，在你的 CLI（Claude Code / Codex / zcode / OpenCode 等）里**任选以下一种方式**：
 
@@ -229,6 +229,6 @@ python -m tests.run_tests
 - [deploy/cli-setup/multica.md](deploy/cli-setup/multica.md) — Multica 平台 agent 绑定意图（前提：MCP 已配好）
 - [UPGRADE.md](UPGRADE.md) — 给 CLI 的 AI 读的升级意图（机器可读）
 
-## License
+## 许可证
 
 基于 [MIT 协议](LICENSE) 发布 © 2026 sillogic。

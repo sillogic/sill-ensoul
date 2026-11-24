@@ -36,27 +36,27 @@ say: set up sill-ensoul from <repo>/SETUP.md
 The CLI's AI follows [SETUP.md](SETUP.md): installs the package → builds the KB → creates the default agent `alter-ego` → registers the MCP server → installs the shell. Restart the CLI, then say:
 
 ```text
-wake up alter-ego      # or 唤醒 alter-ego / 唤醒分身
+wake up alter-ego      # the Chinese phrase 唤醒 alter-ego / 唤醒分身 works too
 ```
 
 `alter-ego` is your digital twin (default agent, empty memory). Accumulate experience with it first; once a domain (algorithm/backend/ ...) has enough, tell the CLI "create an agent called algo-engineer" for a specialized role.
 
-> **推荐形态 = 远程 MCP**（多人 / 多机共享一份记忆）：服务器跑一个 `sill-ensoul-http`，每个 CLI 只是客户端——**不 clone 代码、不装 Python 包、不建本地 KB**，只要一个地址 + 一个 token。本节 Quick Start 是**本机单机**形态（离线 / 只给自己用，零服务零 token），需要时再看。
+> **Recommended shape = remote MCP** (many people / many machines sharing one memory): run one `sill-ensoul-http` server; every CLI is just a client — **no repo clone, no Python package, no local KB**, just a URL and a token. The Quick Start above is the **single-machine** shape (offline / only yourself, zero service, zero token) — read it when you actually want that.
 >
-> **第一次给朋友 / 同事开账号**：owner 在服务器上 `sill-ensoul-admin user create` 生成接入卡，把卡片和 [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) 给他，他自己在 CLI 里粘一句就接完了（不需要仓库访问权）。
+> **Onboarding a friend / teammate for the first time**: the owner runs `sill-ensoul-admin user create` on the server to mint an onboarding card, then hands them the card plus [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) — they paste one message into their CLI and they are connected (no repo access needed).
 
 ## Choose your deployment
 
-| # | 你的场景 | 要读的文件（按顺序） | 说明 |
+| # | Your situation | Files to read (in order) | Notes |
 |---|---|---|---|
-| 1 | **连现成服务器**（最常见：朋友 / 同事 / 多机自己用） | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | **不需要 clone 代码、不装本地包**；只要有地址 + token。薄壳向对方要 `SHELL.md` 正文 |
-| 2 | **自建服务器**：服务器 clone + 部署，回电脑接入 | ① [`docs/deployment.md`](docs/deployment.md) ② [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 先部署服务器（含 `sill-ensoul-admin user create` 开账号），再配客户端 |
-| 3 | **本地单机**：clone 仓库，本机 stdio 直连 | [`SETUP.md`](SETUP.md) | 离线 / 只给自己用；上面 Quick Start 就是这条 |
-| 4 | **原本地 → 切远程**：本机已用本地 stdio，改连现成服务器 | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | 旧注册会被备份后替换；本机旧 KB 闲置或按 deployment.md 迁移 |
-| 升级 | 已装过（本地或远程） | [`UPGRADE.md`](UPGRADE.md) 或 [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | 后者专用于补 `X-Machine-Id` 机器头（SIL-9） |
-| Multica | 平台 agent 绑定（前提 MCP 已配好） | [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | 只做平台侧，不做 MCP 安装 |
+| 1 | **Join an existing server** (most common: friend / teammate / your own multi-machine setup) | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | **No repo clone, no local install** — you only need URL + token. Ask the owner for the `SHELL.md` body too |
+| 2 | **Self-host a server**: deploy on a server, then connect from your machine | (1) [`docs/deployment.md`](docs/deployment.md) then (2) [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | Deploy the server first (including `sill-ensoul-admin user create` for accounts), then configure clients |
+| 3 | **Single machine** (local, stdio) | [`SETUP.md`](SETUP.md) | Offline / only yourself; this is what the Quick Start above does |
+| 4 | **Local → remote**: you already ran local stdio, now switch to an existing server | [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | The old registration is backed up then replaced; the local KB goes idle (or migrate it per deployment.md) |
+| Upgrade | Already installed (local or remote) | [`UPGRADE.md`](UPGRADE.md) or [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | The latter is only for adding the `X-Machine-Id` machine header (SIL-9) |
+| Multica | Binding a platform agent (requires MCP already configured) | [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | Platform side only; it does not install MCP |
 
-不确定？最简单的问题：**你手上有服务器地址 + token 吗？** 有 → 场景 1（或 4）；没有、想自己一个人用 → 场景 3；想给同事开一份共享记忆 → 场景 2。
+Not sure? The one question that settles it: **do you have a server URL + token?** Yes → scenario 1 (or 4); no, and it is just you → scenario 3; you want to give a teammate a shared memory → scenario 2.
 
 <details>
 <summary>Don't want the AI to install? Manual 3 steps</summary>
@@ -185,11 +185,11 @@ ENSOUL_MCP_TOKEN=... sill-ensoul-http      # default bind 0.0.0.0:8930
 ```bash
 sudo mkdir -p /etc/sill-ensoul
 sudo cp .env.example /etc/sill-ensoul/env && sudo chmod 600 /etc/sill-ensoul/env
-sudo vi /etc/sill-ensoul/env                  # 填 ENSOUL_MCP_TOKEN / ENSOUL_KB
+sudo vi /etc/sill-ensoul/env                  # fill in ENSOUL_MCP_TOKEN / ENSOUL_KB
 sudo cp deploy/sill-ensoul-http.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now sill-ensoul-http
-systemctl status sill-ensoul-http             # 改完 env 要 restart 才生效
+systemctl status sill-ensoul-http             # an env change needs a restart to take effect
 ```
 
 **Migrate the KB** — memory is plain files under the local KB root (`knowledge/`); copy the whole tree to the server's `ENSOUL_KB` (exclude per-agent `.fts/` caches — they rebuild automatically):
@@ -252,24 +252,25 @@ Four release tests, all green = core loop works (each builds its own temp KB, ru
 
 ---
 
-## Documentation map（文件地图：谁读、管什么）
+## Documentation map (which file, for whom, covering what)
 
-| 文件 | 谁读 | 管什么 |
+| File | Reader | Covers |
 |---|---|---|
-| [`README.md`](README.md) | 人 | 产品介绍 + Quick Start（两种形态：远程共享为推荐、本机单机可选）+ 部署场景决策表 |
-| [`SETUP.md`](SETUP.md) | CLI 的 AI | **本地**首次安装（装包→建 KB→注册 stdio→薄壳→验证） |
-| [`UPGRADE.md`](UPGRADE.md) | CLI 的 AI | **升级**已装实例（包 + 薄壳两部分，不动 KB） |
-| [`docs/deployment.md`](docs/deployment.md) | 人（服务器管理员） | **远程服务器端**部署 runbook（git 装 / env / systemd / KB 迁移 / 运维 / 排障） |
-| [`deploy/sill-ensoul-http.service`](deploy/sill-ensoul-http.service) | 人（服务器管理员） | **systemd 部署模板**（复制到服务器 `/etc/systemd/system/` 用，非运行时组件） |
-| [`deploy/cli-setup/README.md`](deploy/cli-setup/README.md) | 人 | 客户端接入提示词文件的索引（4 个文件 + 场景路由） |
-| [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | CLI 的 AI | **远程客户端**接入（首次接入 / 原本地切远程） |
-| [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | CLI 的 AI | 已接入客户端**补 `X-Machine-Id` 机器头**（SIL-9 升级） |
-| [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | CLI 的 AI | **Multica 平台** agent 绑定（前提：MCP 已配好） |
-| [`WORKFLOW.md`](WORKFLOW.md) | 人 | CLI-agnostic 工作流（唤醒/检索/蒸馏/skill 调度）权威源 |
-| [`ensoul/SHELL.md`](ensoul/SHELL.md) | CLI 的 AI（经薄壳） | 注入每个 CLI 指令文件的**薄壳规则**（含机器 banner） |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | 人 | 进度 + 设计决策 D1-D13 + 历史坑 H1-H21 |
-| [`docs/DESIGN.md`](docs/DESIGN.md) | 人 | 设计背景：为什么 OKF / MCP，与 mem0/letta/graphiti 对比 |
-| [`docs/multica.md`](docs/multica.md) | 人 | Multica 平台集成指南（设计向；与 deploy/cli-setup/multica.md 的投喂文件互补） |
+| [`README.md`](README.md) | Humans | Product overview + Quick Start (two shapes: remote as recommended, single-machine as optional) + deployment decision table |
+| [`SETUP.md`](SETUP.md) | The CLI's AI | **Local** first install (install package → build KB → register stdio → shell → verify) |
+| [`UPGRADE.md`](UPGRADE.md) | The CLI's AI | **Upgrading** an existing install (package + shell; never touches the KB) |
+| [`docs/deployment.md`](docs/deployment.md) | Humans (server admin) | **Server-side remote** deployment runbook (git install / env / systemd / KB migration / ops / troubleshooting) |
+| [`deploy/sill-ensoul-http.service`](deploy/sill-ensoul-http.service) | Humans (server admin) | **systemd unit template** (copy to `/etc/systemd/system/` on the server; not a runtime component) |
+| [`deploy/cli-setup/README.md`](deploy/cli-setup/README.md) | Humans | Index of the client-setup prompt files (4 files + scenario routing) |
+| [`deploy/cli-setup/cli-remote.md`](deploy/cli-setup/cli-remote.md) | The CLI's AI | **Remote client** setup (first connect / local→remote switch) |
+| [`deploy/cli-setup/update-machine-id.md`](deploy/cli-setup/update-machine-id.md) | The CLI's AI | Adding the **`X-Machine-Id` machine header** to an already-connected client (SIL-9 upgrade) |
+| [`deploy/cli-setup/multica.md`](deploy/cli-setup/multica.md) | The CLI's AI | **Multica platform** agent binding (requires MCP already configured) |
+| [`WORKFLOW.md`](WORKFLOW.md) | Humans | The CLI-agnostic workflow (wake / recall / distill / skill dispatch) — authoritative source |
+| [`ensoul/SHELL.md`](ensoul/SHELL.md) | The CLI's AI (via the shell) | The **shell rules** injected into each CLI's instruction file (includes the machine banner) |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Humans | Progress + design decisions D1-D13 + historical pitfalls H1-H21 |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Humans | Design rationale: why OKF / MCP, and how it compares with mem0 / letta / graphiti |
+| [`docs/multica.md`](docs/multica.md) | Humans | Multica platform integration guide (design-facing; complements the `deploy/cli-setup/multica.md` prompt file) |
+| [`CHANGELOG.md`](CHANGELOG.md) | Humans | Release notes per version (0.3.0 onward) |
 
 ## License
 
